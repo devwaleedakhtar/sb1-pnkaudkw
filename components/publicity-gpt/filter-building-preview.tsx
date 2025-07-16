@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { MediaFilters } from "@/lib/types";
 import {
@@ -13,19 +14,13 @@ import {
   Heart,
   TrendingUp,
   Building,
-  Check,
+  CheckCircle,
   Clock,
   Zap,
+  Wand2,
+  Database,
+  FileText,
 } from "lucide-react";
-
-interface FilterStep {
-  id: string;
-  label: string;
-  icon: React.ReactNode;
-  status: "pending" | "building" | "completed";
-  value?: string;
-  description?: string;
-}
 
 interface FilterBuildingPreviewProps {
   currentFilters: MediaFilters;
@@ -38,312 +33,293 @@ export function FilterBuildingPreview({
   isBuilding,
   lastMessage,
 }: FilterBuildingPreviewProps) {
-  const [buildingSteps, setBuildingSteps] = useState<FilterStep[]>([]);
-  const [currentStep, setCurrentStep] = useState(0);
+  const [buildingProgress, setBuildingProgress] = useState(0);
+  const [buildingSteps, setBuildingSteps] = useState<string[]>([]);
 
-  // Initialize building steps based on the message
   useEffect(() => {
-    if (lastMessage && isBuilding) {
-      const steps = analyzeMessageForSteps(lastMessage);
-      setBuildingSteps(steps);
-      setCurrentStep(0);
+    if (isBuilding) {
+      setBuildingProgress(0);
+      setBuildingSteps([]);
 
-      // Simulate progressive building
+      const steps = [
+        "Analyzing your request...",
+        "Identifying media types...",
+        "Setting date parameters...",
+        "Configuring sentiment filters...",
+        "Selecting relevant outlets...",
+        "Finalizing search parameters...",
+      ];
+
+      let currentStep = 0;
       const interval = setInterval(() => {
-        setCurrentStep((prev) => {
-          if (prev < steps.length - 1) {
-            return prev + 1;
-          } else {
-            clearInterval(interval);
-            return prev;
-          }
-        });
-      }, 800);
+        if (currentStep < steps.length) {
+          setBuildingSteps((prev) => [...prev, steps[currentStep]]);
+          setBuildingProgress(((currentStep + 1) / steps.length) * 100);
+          currentStep++;
+        } else {
+          clearInterval(interval);
+        }
+      }, 600);
 
       return () => clearInterval(interval);
     }
-  }, [lastMessage, isBuilding]);
+  }, [isBuilding]);
 
-  // Update steps status based on current step
-  useEffect(() => {
-    setBuildingSteps((prev) =>
-      prev.map((step, index) => ({
-        ...step,
-        status:
-          index < currentStep
-            ? "completed"
-            : index === currentStep
-            ? "building"
-            : "pending",
-      }))
+  const getSentimentColor = (sentiment: string) => {
+    switch (sentiment.toLowerCase()) {
+      case "positive":
+        return "text-green-600";
+      case "negative":
+        return "text-red-600";
+      case "neutral":
+        return "text-gray-600";
+      default:
+        return "text-gray-600";
+    }
+  };
+
+  const getMediaTypeIcon = (type: string) => {
+    switch (type.toLowerCase()) {
+      case "news":
+        return <FileText className="h-4 w-4 text-blue-500" />;
+      case "social":
+        return <Globe className="h-4 w-4 text-purple-500" />;
+      case "blog":
+        return <FileText className="h-4 w-4 text-green-500" />;
+      default:
+        return <Globe className="h-4 w-4 text-gray-500" />;
+    }
+  };
+
+  const formatReach = (reach: number) => {
+    if (reach >= 1000000) {
+      return `${(reach / 1000000).toFixed(1)}M`;
+    } else if (reach >= 1000) {
+      return `${(reach / 1000).toFixed(0)}K`;
+    }
+    return reach.toString();
+  };
+
+  const hasActiveFilters = () => {
+    return (
+      currentFilters.dateRange.start ||
+      currentFilters.mediaTypes.length > 0 ||
+      currentFilters.sentiment.length > 0 ||
+      currentFilters.outlets.length > 0 ||
+      currentFilters.minReach > 0
     );
-  }, [currentStep]);
-
-  const analyzeMessageForSteps = (message: string): FilterStep[] => {
-    const steps: FilterStep[] = [];
-    const lowerMessage = message.toLowerCase();
-
-    // Date range step
-    if (
-      lowerMessage.includes("last week") ||
-      lowerMessage.includes("past week") ||
-      lowerMessage.includes("recent") ||
-      lowerMessage.includes("today")
-    ) {
-      steps.push({
-        id: "date",
-        label: "Date Range",
-        icon: <Calendar className="h-4 w-4" />,
-        status: "pending",
-        description: "Setting time period for search",
-      });
-    }
-
-    // Media types step
-    if (
-      lowerMessage.includes("social") ||
-      lowerMessage.includes("news") ||
-      lowerMessage.includes("blog") ||
-      lowerMessage.includes("article")
-    ) {
-      steps.push({
-        id: "media",
-        label: "Media Types",
-        icon: <Globe className="h-4 w-4" />,
-        status: "pending",
-        description: "Identifying content sources",
-      });
-    }
-
-    // Sentiment step
-    if (
-      lowerMessage.includes("positive") ||
-      lowerMessage.includes("negative") ||
-      lowerMessage.includes("neutral") ||
-      lowerMessage.includes("sentiment")
-    ) {
-      steps.push({
-        id: "sentiment",
-        label: "Sentiment",
-        icon: <Heart className="h-4 w-4" />,
-        status: "pending",
-        description: "Analyzing emotional tone",
-      });
-    }
-
-    // Reach step
-    if (
-      lowerMessage.includes("high reach") ||
-      lowerMessage.includes("popular") ||
-      lowerMessage.includes("viral") ||
-      lowerMessage.includes("reach")
-    ) {
-      steps.push({
-        id: "reach",
-        label: "Reach Filter",
-        icon: <TrendingUp className="h-4 w-4" />,
-        status: "pending",
-        description: "Setting audience size requirements",
-      });
-    }
-
-    // Outlets step
-    if (
-      lowerMessage.includes("outlet") ||
-      lowerMessage.includes("source") ||
-      lowerMessage.includes("publication") ||
-      lowerMessage.includes("techcrunch") ||
-      lowerMessage.includes("wired") ||
-      lowerMessage.includes("specific")
-    ) {
-      steps.push({
-        id: "outlets",
-        label: "Outlets",
-        icon: <Building className="h-4 w-4" />,
-        status: "pending",
-        description: "Selecting news sources",
-      });
-    }
-
-    // Always add a final step for compilation
-    steps.push({
-      id: "compile",
-      label: "Compiling",
-      icon: <Zap className="h-4 w-4" />,
-      status: "pending",
-      description: "Finalizing search parameters",
-    });
-
-    return steps;
   };
 
-  const getStatusIcon = (status: FilterStep["status"]) => {
-    switch (status) {
-      case "completed":
-        return <Check className="h-3 w-3 text-green-500" />;
-      case "building":
-        return (
-          <div className="h-3 w-3 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-        );
-      case "pending":
-        return <Clock className="h-3 w-3 text-gray-400" />;
-    }
-  };
+  if (isBuilding) {
+    return (
+      <Card className="h-fit">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-sm">
+            <Wand2 className="h-4 w-4 animate-pulse text-blue-500" />
+            Building Filter
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <div className="flex items-center justify-between text-sm">
+              <span>Processing...</span>
+              <span>{Math.round(buildingProgress)}%</span>
+            </div>
+            <Progress value={buildingProgress} className="h-2" />
+          </div>
 
-  const hasFilters =
-    currentFilters &&
-    Object.keys(currentFilters).some((key) => {
-      const value = currentFilters[key as keyof MediaFilters];
-      return Array.isArray(value) ? value.length > 0 : value;
-    });
-
-  return (
-    <Card className="h-full">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Sparkles className="h-5 w-5" />
-          Filter Builder
-        </CardTitle>
-        <p className="text-sm text-gray-600">
-          {isBuilding
-            ? "Building filters from your request..."
-            : "Filters are built as you chat with the AI"}
-        </p>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {/* Building Steps */}
-        {buildingSteps.length > 0 && (
-          <div className="space-y-3">
-            <div className="text-sm font-medium text-gray-700">Processing:</div>
+          <div className="space-y-2">
             {buildingSteps.map((step, index) => (
-              <div
-                key={step.id}
-                className="flex items-center gap-3 p-2 rounded-lg bg-gray-50"
-              >
-                <div className="flex-shrink-0">
-                  {getStatusIcon(step.status)}
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    {step.icon}
-                    <span className="text-sm font-medium">{step.label}</span>
-                  </div>
-                  {step.description && (
-                    <p className="text-xs text-gray-600 mt-1">
-                      {step.description}
-                    </p>
-                  )}
-                </div>
+              <div key={index} className="flex items-center gap-2 text-sm">
+                <CheckCircle className="h-3 w-3 text-green-500" />
+                <span className="text-gray-600">{step}</span>
               </div>
             ))}
           </div>
-        )}
 
-        {/* Current Filters */}
-        {hasFilters && !isBuilding && (
-          <>
-            <Separator />
-            <div className="space-y-3">
-              <div className="text-sm font-medium text-gray-700">
-                Current Filters:
+          {lastMessage && (
+            <div className="p-3 bg-blue-50 rounded-lg">
+              <div className="text-xs text-blue-600 font-medium mb-1">
+                Your Request:
               </div>
+              <div className="text-sm text-blue-800">{lastMessage}</div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    );
+  }
 
-              {currentFilters.dateRange.start && (
-                <div className="flex items-center gap-2 text-sm">
+  return (
+    <Card className="h-fit">
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center gap-2 text-sm">
+          <Sparkles className="h-4 w-4 text-blue-500" />
+          Search Filters
+          {hasActiveFilters() && (
+            <Badge variant="secondary" className="ml-auto">
+              Active
+            </Badge>
+          )}
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {!hasActiveFilters() ? (
+          <div className="text-center py-8 text-gray-500">
+            <Database className="h-8 w-8 mx-auto mb-2 text-gray-400" />
+            <p className="text-sm">No filters applied</p>
+            <p className="text-xs text-gray-400 mt-1">
+              Chat with AI to build your search
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {/* Date Range */}
+            {currentFilters.dateRange.start && (
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
                   <Calendar className="h-4 w-4 text-gray-500" />
+                  <span className="text-sm font-medium">Date Range</span>
+                </div>
+                <Badge variant="outline" className="text-xs">
+                  {new Date(
+                    currentFilters.dateRange.start
+                  ).toLocaleDateString()}
+                  {currentFilters.dateRange.end &&
+                    ` - ${new Date(
+                      currentFilters.dateRange.end
+                    ).toLocaleDateString()}`}
+                </Badge>
+              </div>
+            )}
+
+            {/* Media Types */}
+            {currentFilters.mediaTypes.length > 0 && (
+              <div className="space-y-1">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Globe className="h-4 w-4 text-gray-500" />
+                    <span className="text-sm font-medium">Media Types</span>
+                  </div>
                   <Badge variant="outline" className="text-xs">
+                    {currentFilters.mediaTypes.length} selected
+                  </Badge>
+                </div>
+                <div className="flex flex-wrap gap-1 pl-6">
+                  {currentFilters.mediaTypes.map((type) => (
+                    <div key={type} className="flex items-center gap-1">
+                      {getMediaTypeIcon(type)}
+                      <Badge variant="secondary" className="text-xs capitalize">
+                        {type}
+                      </Badge>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Sentiment */}
+            {currentFilters.sentiment.length > 0 && (
+              <div className="space-y-1">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Heart className="h-4 w-4 text-gray-500" />
+                    <span className="text-sm font-medium">Sentiment</span>
+                  </div>
+                  <Badge variant="outline" className="text-xs">
+                    {currentFilters.sentiment.length} selected
+                  </Badge>
+                </div>
+                <div className="flex flex-wrap gap-1 pl-6">
+                  {currentFilters.sentiment.map((sentiment) => (
+                    <Badge
+                      key={sentiment}
+                      variant="secondary"
+                      className={`text-xs capitalize ${getSentimentColor(
+                        sentiment
+                      )}`}
+                    >
+                      {sentiment}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Outlets */}
+            {currentFilters.outlets.length > 0 && (
+              <div className="space-y-1">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Building className="h-4 w-4 text-gray-500" />
+                    <span className="text-sm font-medium">Outlets</span>
+                  </div>
+                  <Badge variant="outline" className="text-xs">
+                    {currentFilters.outlets.length} selected
+                  </Badge>
+                </div>
+                <div className="flex flex-wrap gap-1 pl-6">
+                  {currentFilters.outlets.map((outlet) => (
+                    <Badge key={outlet} variant="secondary" className="text-xs">
+                      {outlet}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Min Reach */}
+            {currentFilters.minReach > 0 && (
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <TrendingUp className="h-4 w-4 text-gray-500" />
+                  <span className="text-sm font-medium">Min Reach</span>
+                </div>
+                <Badge variant="outline" className="text-xs">
+                  {formatReach(currentFilters.minReach)}+
+                </Badge>
+              </div>
+            )}
+
+            <Separator />
+
+            {/* Filter Summary */}
+            <div className="pt-2 border-t">
+              <div className="text-xs text-gray-500 mb-1">Filter Summary:</div>
+              <div className="text-sm text-gray-700">
+                Searching for{" "}
+                {currentFilters.mediaTypes.length > 0 && (
+                  <span>{currentFilters.mediaTypes.join(", ")} content</span>
+                )}
+                {currentFilters.sentiment.length > 0 && (
+                  <span>
+                    {currentFilters.mediaTypes.length > 0 ? " with " : ""}
+                    {currentFilters.sentiment.join(", ")} sentiment
+                  </span>
+                )}
+                {currentFilters.outlets.length > 0 && (
+                  <span>
+                    {" from "}
+                    {currentFilters.outlets.length === 1
+                      ? currentFilters.outlets[0]
+                      : `${currentFilters.outlets.length} outlets`}
+                  </span>
+                )}
+                {currentFilters.minReach > 0 && (
+                  <span>
+                    {" "}
+                    with {formatReach(currentFilters.minReach)}+ reach
+                  </span>
+                )}
+                {currentFilters.dateRange.start && (
+                  <span>
+                    {" since "}
                     {new Date(
                       currentFilters.dateRange.start
                     ).toLocaleDateString()}
-                    {currentFilters.dateRange.end &&
-                      ` - ${new Date(
-                        currentFilters.dateRange.end
-                      ).toLocaleDateString()}`}
-                  </Badge>
-                </div>
-              )}
-
-              {currentFilters.mediaTypes.length > 0 && (
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2 text-xs text-gray-600">
-                    <Globe className="h-3 w-3" />
-                    Media Types:
-                  </div>
-                  <div className="flex flex-wrap gap-1">
-                    {currentFilters.mediaTypes.map((type) => (
-                      <Badge key={type} variant="secondary" className="text-xs">
-                        {type}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {currentFilters.sentiment.length > 0 && (
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2 text-xs text-gray-600">
-                    <Heart className="h-3 w-3" />
-                    Sentiment:
-                  </div>
-                  <div className="flex flex-wrap gap-1">
-                    {currentFilters.sentiment.map((sentiment) => (
-                      <Badge
-                        key={sentiment}
-                        variant="secondary"
-                        className="text-xs"
-                      >
-                        {sentiment}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {currentFilters.outlets.length > 0 && (
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2 text-xs text-gray-600">
-                    <Building className="h-3 w-3" />
-                    Outlets:
-                  </div>
-                  <div className="flex flex-wrap gap-1">
-                    {currentFilters.outlets.map((outlet) => (
-                      <Badge
-                        key={outlet}
-                        variant="secondary"
-                        className="text-xs"
-                      >
-                        {outlet}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {currentFilters.minReach > 0 && (
-                <div className="flex items-center gap-2 text-sm">
-                  <TrendingUp className="h-4 w-4 text-gray-500" />
-                  <Badge variant="outline" className="text-xs">
-                    Min Reach: {currentFilters.minReach.toLocaleString()}
-                  </Badge>
-                </div>
-              )}
-            </div>
-          </>
-        )}
-
-        {/* Empty State */}
-        {!hasFilters && !isBuilding && (
-          <div className="text-center py-8 text-gray-500">
-            <Sparkles className="h-8 w-8 mx-auto mb-3 opacity-50" />
-            <p className="text-sm font-medium mb-2">No filters built yet</p>
-            <p className="text-xs text-gray-400 mb-3">
-              Start chatting with the AI to automatically build search filters
-            </p>
-            <div className="text-xs text-gray-400 space-y-1">
-              <p className="font-medium">Try asking:</p>
-              <p>• "Show me positive coverage from last week"</p>
-              <p>• "Find articles about our product launch"</p>
-              <p>• "Get social media mentions with high reach"</p>
+                  </span>
+                )}
+              </div>
             </div>
           </div>
         )}
