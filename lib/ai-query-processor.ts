@@ -15,6 +15,21 @@ export interface InfluencerProcessedQuery {
   confidence: number;
 }
 
+export interface SocialTrackingParams {
+  name: string;
+  keywords: string[];
+  hashtags: string[];
+  platforms: ("instagram" | "twitter" | "tiktok" | "youtube")[];
+  startDate: string;
+  endDate: string;
+}
+
+export interface SocialTrackingProcessedQuery {
+  trackingParams: SocialTrackingParams;
+  suggestions: string[];
+  confidence: number;
+}
+
 export interface QueryPattern {
   pattern: RegExp;
   handler: (
@@ -29,6 +44,15 @@ export interface InfluencerQueryPattern {
   handler: (
     match: RegExpMatchArray,
     params: SearchParams,
+    suggestions: string[]
+  ) => void;
+}
+
+export interface SocialTrackingQueryPattern {
+  pattern: RegExp;
+  handler: (
+    match: RegExpMatchArray,
+    params: SocialTrackingParams,
     suggestions: string[]
   ) => void;
 }
@@ -351,6 +375,385 @@ export class AIQueryProcessor {
       !lowerQuery.includes("reach")
     ) {
       suggestions.push('Add reach requirement (e.g., "high reach", "viral")');
+    }
+
+    return suggestions;
+  }
+}
+
+/**
+ * AI Query Processor for Social Media Tracking - Converts natural language queries into structured tracking parameters
+ */
+export class SocialTrackingAIQueryProcessor {
+  private patterns: SocialTrackingQueryPattern[] = [
+    // Platform patterns
+    {
+      pattern: /\b(instagram|insta|ig)\b/gi,
+      handler: (match, params, suggestions) => {
+        if (!params.platforms.includes("instagram")) {
+          params.platforms.push("instagram");
+          suggestions.push("Platform: Instagram");
+        }
+      },
+    },
+    {
+      pattern: /\b(youtube|yt)\b/gi,
+      handler: (match, params, suggestions) => {
+        if (!params.platforms.includes("youtube")) {
+          params.platforms.push("youtube");
+          suggestions.push("Platform: YouTube");
+        }
+      },
+    },
+    {
+      pattern: /\b(tiktok|tik\s*tok)\b/gi,
+      handler: (match, params, suggestions) => {
+        if (!params.platforms.includes("tiktok")) {
+          params.platforms.push("tiktok");
+          suggestions.push("Platform: TikTok");
+        }
+      },
+    },
+    {
+      pattern: /\b(twitter|x\.com)\b/gi,
+      handler: (match, params, suggestions) => {
+        if (!params.platforms.includes("twitter")) {
+          params.platforms.push("twitter");
+          suggestions.push("Platform: Twitter");
+        }
+      },
+    },
+
+    // Hashtag patterns
+    {
+      pattern: /#(\w+)/gi,
+      handler: (match, params, suggestions) => {
+        const hashtag = `#${match[1]}`;
+        if (!params.hashtags.includes(hashtag)) {
+          params.hashtags.push(hashtag);
+          suggestions.push(`Hashtag: ${hashtag}`);
+        }
+      },
+    },
+
+    // Brand/Product patterns
+    {
+      pattern:
+        /\b(brand|product|company)\s+([a-zA-Z0-9\s]+?)(?:\s+(?:mentions?|tracking|monitoring))/gi,
+      handler: (match, params, suggestions) => {
+        const brandName = match[2].trim();
+        if (brandName && !params.keywords.includes(brandName)) {
+          params.keywords.push(brandName);
+          suggestions.push(`Brand: ${brandName}`);
+        }
+      },
+    },
+
+    // Campaign patterns
+    {
+      pattern:
+        /\b(campaign|launch|promotion)\s+([a-zA-Z0-9\s]+?)(?:\s+(?:tracking|monitoring))/gi,
+      handler: (match, params, suggestions) => {
+        const campaignName = match[2].trim();
+        if (campaignName && !params.keywords.includes(campaignName)) {
+          params.keywords.push(campaignName);
+          params.name = `${campaignName} Tracking`;
+          suggestions.push(`Campaign: ${campaignName}`);
+        }
+      },
+    },
+
+    // Time period patterns
+    {
+      pattern: /\b(next|coming|upcoming)\s+(\d+)\s+(days?|weeks?|months?)\b/gi,
+      handler: (match, params, suggestions) => {
+        const amount = parseInt(match[2]);
+        const unit = match[3].toLowerCase();
+
+        const startDate = new Date();
+        const endDate = new Date();
+
+        if (unit.includes("day")) {
+          endDate.setDate(endDate.getDate() + amount);
+        } else if (unit.includes("week")) {
+          endDate.setDate(endDate.getDate() + amount * 7);
+        } else if (unit.includes("month")) {
+          endDate.setMonth(endDate.getMonth() + amount);
+        }
+
+        params.startDate = startDate.toISOString().split("T")[0];
+        params.endDate = endDate.toISOString().split("T")[0];
+        suggestions.push(`Duration: ${amount} ${unit}`);
+      },
+    },
+
+    {
+      pattern: /\b(for|during)\s+(\d+)\s+(days?|weeks?|months?)\b/gi,
+      handler: (match, params, suggestions) => {
+        const amount = parseInt(match[2]);
+        const unit = match[3].toLowerCase();
+
+        const startDate = new Date();
+        const endDate = new Date();
+
+        if (unit.includes("day")) {
+          endDate.setDate(endDate.getDate() + amount);
+        } else if (unit.includes("week")) {
+          endDate.setDate(endDate.getDate() + amount * 7);
+        } else if (unit.includes("month")) {
+          endDate.setMonth(endDate.getMonth() + amount);
+        }
+
+        params.startDate = startDate.toISOString().split("T")[0];
+        params.endDate = endDate.toISOString().split("T")[0];
+        suggestions.push(`Duration: ${amount} ${unit}`);
+      },
+    },
+
+    // Competition patterns
+    {
+      pattern:
+        /\b(competitor|competition|rival)\s+([a-zA-Z0-9\s]+?)(?:\s+(?:mentions?|tracking|monitoring))/gi,
+      handler: (match, params, suggestions) => {
+        const competitor = match[2].trim();
+        if (competitor && !params.keywords.includes(competitor)) {
+          params.keywords.push(competitor);
+          suggestions.push(`Competitor: ${competitor}`);
+        }
+      },
+    },
+
+    // Event patterns
+    {
+      pattern:
+        /\b(event|conference|webinar|launch)\s+([a-zA-Z0-9\s]+?)(?:\s+(?:mentions?|tracking|monitoring))/gi,
+      handler: (match, params, suggestions) => {
+        const eventName = match[2].trim();
+        if (eventName && !params.keywords.includes(eventName)) {
+          params.keywords.push(eventName);
+          suggestions.push(`Event: ${eventName}`);
+        }
+      },
+    },
+
+    // Sentiment patterns
+    {
+      pattern:
+        /\b(positive|negative|neutral)\s+(mentions?|sentiment|feedback)\b/gi,
+      handler: (match, params, suggestions) => {
+        const sentiment = match[1].toLowerCase();
+        suggestions.push(`Focus: ${sentiment} sentiment`);
+      },
+    },
+
+    // Crisis monitoring patterns
+    {
+      pattern: /\b(crisis|issue|problem|complaint)\s+(monitoring|tracking)\b/gi,
+      handler: (match, params, suggestions) => {
+        params.keywords.push("complaint", "issue", "problem");
+        suggestions.push("Focus: Crisis monitoring");
+      },
+    },
+  ];
+
+  /**
+   * Process a natural language query into structured tracking parameters
+   */
+  async processSocialTrackingQuery(
+    naturalQuery: string
+  ): Promise<SocialTrackingProcessedQuery> {
+    const trackingParams: SocialTrackingParams = {
+      name: "",
+      keywords: [],
+      hashtags: [],
+      platforms: [],
+      startDate: new Date().toISOString().split("T")[0],
+      endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+        .toISOString()
+        .split("T")[0], // 30 days default
+    };
+
+    const suggestions: string[] = [];
+    let confidence = 0;
+
+    // Apply all patterns
+    for (const { pattern, handler } of this.patterns) {
+      const matches = Array.from(naturalQuery.matchAll(pattern));
+      for (const match of matches) {
+        handler(match, trackingParams, suggestions);
+        confidence += 0.1; // Increase confidence for each matched pattern
+      }
+    }
+
+    // Extract keywords that aren't already captured
+    const words = naturalQuery.toLowerCase().split(/\s+/);
+    const commonWords = new Set([
+      "track",
+      "monitor",
+      "mentions",
+      "social",
+      "media",
+      "on",
+      "for",
+      "about",
+      "the",
+      "and",
+      "or",
+      "in",
+      "at",
+      "to",
+      "from",
+      "with",
+      "by",
+    ]);
+
+    words.forEach((word) => {
+      if (
+        word.length > 3 &&
+        !commonWords.has(word) &&
+        !trackingParams.keywords.includes(word)
+      ) {
+        // Only add if it's not already a hashtag or platform
+        if (
+          !word.startsWith("#") &&
+          !["instagram", "twitter", "tiktok", "youtube"].includes(word)
+        ) {
+          trackingParams.keywords.push(word);
+        }
+      }
+    });
+
+    // Generate tracker name if not set
+    if (!trackingParams.name) {
+      if (trackingParams.keywords.length > 0) {
+        trackingParams.name = `${trackingParams.keywords[0]} Tracking`;
+      } else if (trackingParams.hashtags.length > 0) {
+        trackingParams.name = `${trackingParams.hashtags[0]} Tracking`;
+      } else {
+        trackingParams.name = "Social Media Tracking";
+      }
+    }
+
+    // Default to all platforms if none specified
+    if (trackingParams.platforms.length === 0) {
+      trackingParams.platforms = ["instagram", "twitter", "tiktok", "youtube"];
+      suggestions.push("Platforms: All platforms (default)");
+    }
+
+    // Ensure at least one keyword
+    if (trackingParams.keywords.length === 0) {
+      const fallbackKeywords = this.extractFallbackKeywords(naturalQuery);
+      trackingParams.keywords = fallbackKeywords;
+      if (fallbackKeywords.length > 0) {
+        suggestions.push(`Keywords: ${fallbackKeywords.join(", ")}`);
+      }
+    }
+
+    // Normalize confidence (0-1)
+    confidence = Math.min(confidence, 1);
+
+    return {
+      trackingParams,
+      suggestions,
+      confidence,
+    };
+  }
+
+  private extractFallbackKeywords(query: string): string[] {
+    // Remove common words and extract potential keywords
+    const words = query
+      .toLowerCase()
+      .replace(/[^\w\s]/g, " ")
+      .split(/\s+/)
+      .filter((word) => word.length > 2);
+
+    const stopWords = new Set([
+      "the",
+      "and",
+      "or",
+      "but",
+      "in",
+      "on",
+      "at",
+      "to",
+      "for",
+      "of",
+      "with",
+      "by",
+      "track",
+      "monitor",
+      "social",
+      "media",
+      "mentions",
+      "tracking",
+      "monitoring",
+      "create",
+      "setup",
+      "new",
+      "campaign",
+      "brand",
+      "product",
+      "company",
+    ]);
+
+    return words.filter((word) => !stopWords.has(word)).slice(0, 5);
+  }
+
+  /**
+   * Get example queries for user guidance
+   */
+  getSocialTrackingExampleQueries(): string[] {
+    return [
+      "Track mentions of TechCorp on Instagram and Twitter for 30 days",
+      "Monitor #ProductLaunch campaign across all platforms",
+      "Create crisis monitoring for customer complaints",
+      "Track competitor Apple mentions on social media",
+      "Monitor brand sentiment for next 2 weeks",
+      "Track event mentions for TechConf2024 #techconf",
+      "Monitor product feedback on Instagram and TikTok",
+      "Track campaign performance for summer promotion",
+    ];
+  }
+
+  /**
+   * Suggest query improvements based on current input
+   */
+  suggestSocialTrackingQueryImprovements(query: string): string[] {
+    const suggestions: string[] = [];
+    const lowerQuery = query.toLowerCase();
+
+    if (
+      !lowerQuery.includes("instagram") &&
+      !lowerQuery.includes("twitter") &&
+      !lowerQuery.includes("tiktok") &&
+      !lowerQuery.includes("youtube")
+    ) {
+      suggestions.push('Specify platforms (e.g., "on Instagram and Twitter")');
+    }
+
+    if (!lowerQuery.includes("#") && !lowerQuery.includes("hashtag")) {
+      suggestions.push('Add hashtags to track (e.g., "#brandname")');
+    }
+
+    if (
+      !lowerQuery.includes("day") &&
+      !lowerQuery.includes("week") &&
+      !lowerQuery.includes("month")
+    ) {
+      suggestions.push(
+        'Specify duration (e.g., "for 30 days", "next 2 weeks")'
+      );
+    }
+
+    if (
+      !lowerQuery.includes("brand") &&
+      !lowerQuery.includes("product") &&
+      !lowerQuery.includes("campaign") &&
+      !lowerQuery.includes("company")
+    ) {
+      suggestions.push(
+        'Specify what to track (e.g., "brand mentions", "product feedback")'
+      );
     }
 
     return suggestions;

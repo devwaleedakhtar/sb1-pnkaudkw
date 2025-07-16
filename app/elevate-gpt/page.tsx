@@ -98,6 +98,191 @@ export default function ElevateGPT() {
     console.log("Searching from brief:", query);
   };
 
+  const generateMockInfluencersForQuery = (query: string): Influencer[] => {
+    const lowerQuery = query.toLowerCase();
+
+    // Generate mock influencers based on query
+    const mockInfluencers: Influencer[] = [];
+
+    if (lowerQuery.includes("tech") || lowerQuery.includes("youtube")) {
+      mockInfluencers.push(
+        {
+          id: "mock-tech-1",
+          campaignId: "1",
+          name: "Alex TechGuru",
+          platform: "youtube",
+          followers: 750000,
+          engagement: 3.8,
+          category: "Technology",
+          avatar:
+            "https://images.pexels.com/photos/1222271/pexels-photo-1222271.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&fit=crop",
+          verified: true,
+        },
+        {
+          id: "mock-tech-2",
+          campaignId: "1",
+          name: "TechSavvy Sam",
+          platform: "youtube",
+          followers: 420000,
+          engagement: 4.2,
+          category: "Technology",
+          avatar:
+            "https://images.pexels.com/photos/1043471/pexels-photo-1043471.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&fit=crop",
+          verified: false,
+        }
+      );
+    }
+
+    if (lowerQuery.includes("fashion") || lowerQuery.includes("instagram")) {
+      mockInfluencers.push(
+        {
+          id: "mock-fashion-1",
+          campaignId: "1",
+          name: "Sophia StyleIcon",
+          platform: "instagram",
+          followers: 890000,
+          engagement: 5.2,
+          category: "Fashion",
+          avatar:
+            "https://images.pexels.com/photos/1858175/pexels-photo-1858175.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&fit=crop",
+          verified: true,
+        },
+        {
+          id: "mock-fashion-2",
+          campaignId: "1",
+          name: "Emma ChicStyle",
+          platform: "instagram",
+          followers: 340000,
+          engagement: 4.8,
+          category: "Fashion",
+          avatar:
+            "https://images.pexels.com/photos/1239291/pexels-photo-1239291.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&fit=crop",
+          verified: false,
+        }
+      );
+    }
+
+    if (lowerQuery.includes("fitness") || lowerQuery.includes("micro")) {
+      mockInfluencers.push(
+        {
+          id: "mock-fitness-1",
+          campaignId: "1",
+          name: "Mike FitnessCoach",
+          platform: "instagram",
+          followers: 85000,
+          engagement: 6.1,
+          category: "Fitness",
+          avatar:
+            "https://images.pexels.com/photos/1438081/pexels-photo-1438081.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&fit=crop",
+          verified: false,
+        },
+        {
+          id: "mock-fitness-2",
+          campaignId: "1",
+          name: "Lisa HealthyLiving",
+          platform: "tiktok",
+          followers: 120000,
+          engagement: 5.8,
+          category: "Fitness",
+          avatar:
+            "https://images.pexels.com/photos/1391498/pexels-photo-1391498.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&fit=crop",
+          verified: true,
+        }
+      );
+    }
+
+    if (lowerQuery.includes("gaming") || lowerQuery.includes("streamer")) {
+      mockInfluencers.push(
+        {
+          id: "mock-gaming-1",
+          campaignId: "1",
+          name: "Tyler GameMaster",
+          platform: "youtube",
+          followers: 1200000,
+          engagement: 4.5,
+          category: "Gaming",
+          avatar:
+            "https://images.pexels.com/photos/1704488/pexels-photo-1704488.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&fit=crop",
+          verified: true,
+        },
+        {
+          id: "mock-gaming-2",
+          campaignId: "1",
+          name: "Alex StreamQueen",
+          platform: "tiktok",
+          followers: 650000,
+          engagement: 5.9,
+          category: "Gaming",
+          avatar:
+            "https://images.pexels.com/photos/1559486/pexels-photo-1559486.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&fit=crop",
+          verified: false,
+        }
+      );
+    }
+
+    if (lowerQuery.includes("travel")) {
+      mockInfluencers.push({
+        id: "mock-travel-1",
+        campaignId: "1",
+        name: "Maya Wanderlust",
+        platform: "instagram",
+        followers: 520000,
+        engagement: 4.7,
+        category: "Travel",
+        avatar:
+          "https://images.pexels.com/photos/1181686/pexels-photo-1181686.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&fit=crop",
+        verified: true,
+      });
+    }
+
+    if (lowerQuery.includes("beauty") || lowerQuery.includes("tiktok")) {
+      mockInfluencers.push({
+        id: "mock-beauty-1",
+        campaignId: "1",
+        name: "Zoe BeautyGuru",
+        platform: "tiktok",
+        followers: 780000,
+        engagement: 6.3,
+        category: "Beauty",
+        avatar:
+          "https://images.pexels.com/photos/1065084/pexels-photo-1065084.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&fit=crop",
+        verified: true,
+      });
+    }
+
+    if (lowerQuery.includes("food")) {
+      mockInfluencers.push({
+        id: "mock-food-1",
+        campaignId: "1",
+        name: "Chef Marco",
+        platform: "youtube",
+        followers: 380000,
+        engagement: 4.1,
+        category: "Food",
+        avatar:
+          "https://images.pexels.com/photos/1222271/pexels-photo-1222271.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&fit=crop",
+        verified: false,
+      });
+    }
+
+    if (lowerQuery.includes("lifestyle")) {
+      mockInfluencers.push({
+        id: "mock-lifestyle-1",
+        campaignId: "1",
+        name: "Jessica SmartLiving",
+        platform: "instagram",
+        followers: 320000,
+        engagement: 4.8,
+        category: "Lifestyle",
+        avatar:
+          "https://images.pexels.com/photos/1239291/pexels-photo-1239291.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&fit=crop",
+        verified: false,
+      });
+    }
+
+    return mockInfluencers;
+  };
+
   const handleSearch = async (params: SearchParams) => {
     setSearching(true);
     setLastSearchQuery(params.query);
@@ -107,6 +292,14 @@ export default function ElevateGPT() {
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
       let filtered = [...influencers];
+
+      // If this is from an example query, generate mock data
+      if (params.query && params.query.length > 0) {
+        const mockResults = generateMockInfluencersForQuery(params.query);
+        if (mockResults.length > 0) {
+          filtered = [...filtered, ...mockResults];
+        }
+      }
 
       // Apply query filter
       if (params.query) {
@@ -348,11 +541,11 @@ export default function ElevateGPT() {
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center space-x-2">
-                <Badge className="bg-blue-500">
-                  <div className="text-2xl font-bold">
+                <div className="flex items-center justify-center w-10 h-10 bg-blue-100 rounded-full">
+                  <div className="text-2xl font-bold text-blue-600">
                     {searchStats.verifiedCount}
                   </div>
-                </Badge>
+                </div>
                 <div>
                   <div className="text-sm text-gray-600">Verified Accounts</div>
                 </div>
