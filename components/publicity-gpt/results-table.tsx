@@ -1,12 +1,39 @@
-'use client';
+"use client";
 
-import { MediaResult } from '@/lib/types';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { ExternalLink, TrendingUp, Calendar, Building } from 'lucide-react';
-import { formatDistanceToNow, format } from 'date-fns';
+import { MediaResult } from "@/lib/types";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  ExternalLink,
+  TrendingUp,
+  Calendar,
+  Building,
+  MoreHorizontal,
+  Eye,
+  BookmarkPlus,
+  Share2,
+  Download,
+  AlertCircle,
+  ThumbsUp,
+  ThumbsDown,
+  Minus,
+} from "lucide-react";
+import { formatDistanceToNow, format } from "date-fns";
 
 interface ResultsTableProps {
   results: MediaResult[];
@@ -14,12 +41,29 @@ interface ResultsTableProps {
 }
 
 export function ResultsTable({ results, loading }: ResultsTableProps) {
-  const getSentimentColor = (sentiment: MediaResult['sentiment']) => {
+  const getSentimentColor = (sentiment: MediaResult["sentiment"]) => {
     switch (sentiment) {
-      case 'positive': return 'bg-green-100 text-green-800';
-      case 'negative': return 'bg-red-100 text-red-800';
-      case 'neutral': return 'bg-gray-100 text-gray-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case "positive":
+        return "bg-green-100 text-green-800 border-green-200";
+      case "negative":
+        return "bg-red-100 text-red-800 border-red-200";
+      case "neutral":
+        return "bg-gray-100 text-gray-800 border-gray-200";
+      default:
+        return "bg-gray-100 text-gray-800 border-gray-200";
+    }
+  };
+
+  const getSentimentIcon = (sentiment: MediaResult["sentiment"]) => {
+    switch (sentiment) {
+      case "positive":
+        return <ThumbsUp className="h-3 w-3" />;
+      case "negative":
+        return <ThumbsDown className="h-3 w-3" />;
+      case "neutral":
+        return <Minus className="h-3 w-3" />;
+      default:
+        return <Minus className="h-3 w-3" />;
     }
   };
 
@@ -32,11 +76,38 @@ export function ResultsTable({ results, loading }: ResultsTableProps) {
     return reach.toString();
   };
 
+  const getReachColor = (reach: number) => {
+    if (reach >= 1000000) return "text-red-600 font-semibold";
+    if (reach >= 100000) return "text-orange-600 font-semibold";
+    if (reach >= 10000) return "text-blue-600 font-medium";
+    return "text-gray-600";
+  };
+
+  const handleSaveArticle = (result: MediaResult) => {
+    console.log("Saving article:", result.id);
+    // In a real app, this would save to backend
+  };
+
+  const handleShareArticle = (result: MediaResult) => {
+    console.log("Sharing article:", result.id);
+    // In a real app, this would open share dialog
+  };
+
+  const handleDownloadArticle = (result: MediaResult) => {
+    console.log("Downloading article:", result.id);
+    // In a real app, this would download article content
+  };
+
+  const totalReach = results.reduce((sum, r) => sum + r.reach, 0);
+
   if (loading) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Search Results</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            <Building className="h-5 w-5" />
+            Search Results
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
@@ -56,85 +127,183 @@ export function ResultsTable({ results, loading }: ResultsTableProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center justify-between">
-          <span>Search Results ({results.length})</span>
+        <div className="flex items-center justify-between">
+          <CardTitle className="flex items-center gap-2">
+            <Building className="h-5 w-5" />
+            <span>Search Results</span>
+            <Badge variant="secondary" className="ml-2">
+              {results.length}
+            </Badge>
+          </CardTitle>
           {results.length > 0 && (
-            <div className="text-sm text-gray-600">
-              Total Reach: {formatReach(results.reduce((sum, r) => sum + r.reach, 0))}
+            <div className="flex items-center gap-4 text-sm text-gray-600">
+              <div className="flex items-center gap-1">
+                <TrendingUp className="h-4 w-4" />
+                <span>Total Reach: </span>
+                <span className={`font-semibold ${getReachColor(totalReach)}`}>
+                  {formatReach(totalReach)}
+                </span>
+              </div>
             </div>
           )}
-        </CardTitle>
+        </div>
       </CardHeader>
       <CardContent>
         {results.length === 0 ? (
-          <div className="text-center py-8 text-gray-500">
-            <Building className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-            <p>No media results found</p>
-            <p className="text-sm">Try adjusting your search terms or filters</p>
+          <div className="text-center py-12">
+            <div className="mx-auto w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+              <Building className="h-8 w-8 text-gray-400" />
+            </div>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">
+              No results found
+            </h3>
+            <p className="text-gray-500 mb-4">
+              Try adjusting your search terms or filters
+            </p>
+            <div className="flex justify-center gap-2">
+              <Badge variant="outline">💡 Try "positive news"</Badge>
+              <Badge variant="outline">📅 Expand date range</Badge>
+              <Badge variant="outline">🔍 Use broader keywords</Badge>
+            </div>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Headline</TableHead>
-                  <TableHead>Outlet</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Sentiment</TableHead>
-                  <TableHead>Reach</TableHead>
-                  <TableHead>Actions</TableHead>
+                  <TableHead className="w-[40%]">Article</TableHead>
+                  <TableHead className="w-[15%]">Outlet</TableHead>
+                  <TableHead className="w-[15%]">Date</TableHead>
+                  <TableHead className="w-[12%]">Sentiment</TableHead>
+                  <TableHead className="w-[12%]">Reach</TableHead>
+                  <TableHead className="w-[6%]">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {results.map((result) => (
-                  <TableRow key={result.id} className="hover:bg-gray-50">
-                    <TableCell>
-                      <div>
-                        <div className="font-medium line-clamp-2 mb-1">
+                  <TableRow
+                    key={result.id}
+                    className="hover:bg-gray-50/50 group"
+                  >
+                    <TableCell className="py-4">
+                      <div className="space-y-2">
+                        <div className="font-medium text-gray-900 line-clamp-2 group-hover:text-blue-600 transition-colors">
                           {result.title}
                         </div>
-                        <div className="text-sm text-gray-600 line-clamp-2">
+                        <div className="text-sm text-gray-600 line-clamp-2 leading-relaxed">
                           {result.summary}
                         </div>
                       </div>
                     </TableCell>
-                    <TableCell>
-                      <div className="flex items-center space-x-2">
-                        <Building className="h-4 w-4 text-gray-400" />
-                        <span className="font-medium">{result.outlet}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center space-x-2">
-                        <Calendar className="h-4 w-4 text-gray-400" />
+                    <TableCell className="py-4">
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
+                          <Building className="h-4 w-4 text-gray-500" />
+                        </div>
                         <div>
-                          <div className="text-sm">
-                            {format(result.publishedAt, 'MMM d, yyyy')}
+                          <div className="font-medium text-sm">
+                            {result.outlet}
                           </div>
-                          <div className="text-xs text-gray-500">
-                            {formatDistanceToNow(result.publishedAt, { addSuffix: true })}
-                          </div>
+                          <div className="text-xs text-gray-500">Media</div>
                         </div>
                       </div>
                     </TableCell>
-                    <TableCell>
-                      <Badge className={getSentimentColor(result.sentiment)}>
-                        {result.sentiment}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center space-x-2">
-                        <TrendingUp className="h-4 w-4 text-gray-400" />
-                        <span className="font-medium">{formatReach(result.reach)}</span>
+                    <TableCell className="py-4">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-1 text-sm">
+                          <Calendar className="h-3 w-3 text-gray-400" />
+                          <span>
+                            {format(result.publishedAt, "MMM d, yyyy")}
+                          </span>
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          {formatDistanceToNow(result.publishedAt, {
+                            addSuffix: true,
+                          })}
+                        </div>
                       </div>
                     </TableCell>
-                    <TableCell>
-                      <Button variant="outline" size="sm" asChild>
-                        <a href={result.url} target="_blank" rel="noopener noreferrer">
-                          <ExternalLink className="h-4 w-4 mr-2" />
-                          View
-                        </a>
-                      </Button>
+                    <TableCell className="py-4">
+                      <Badge
+                        className={`${getSentimentColor(
+                          result.sentiment
+                        )} flex items-center gap-1`}
+                      >
+                        {getSentimentIcon(result.sentiment)}
+                        <span className="capitalize">{result.sentiment}</span>
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="py-4">
+                      <div className="flex items-center gap-2">
+                        <TrendingUp className="h-4 w-4 text-gray-400" />
+                        <span
+                          className={`font-medium ${getReachColor(
+                            result.reach
+                          )}`}
+                        >
+                          {formatReach(result.reach)}
+                        </span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="py-4">
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          asChild
+                          className="h-8 w-8 p-0 hover:bg-blue-50 hover:text-blue-600"
+                        >
+                          <a
+                            href={result.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </a>
+                        </Button>
+
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0 hover:bg-gray-50"
+                            >
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-48">
+                            <DropdownMenuItem
+                              onClick={() => handleSaveArticle(result)}
+                            >
+                              <BookmarkPlus className="h-4 w-4 mr-2" />
+                              Save Article
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => handleShareArticle(result)}
+                            >
+                              <Share2 className="h-4 w-4 mr-2" />
+                              Share
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => handleDownloadArticle(result)}
+                            >
+                              <Download className="h-4 w-4 mr-2" />
+                              Download
+                            </DropdownMenuItem>
+                            <DropdownMenuItem asChild>
+                              <a
+                                href={result.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              >
+                                <ExternalLink className="h-4 w-4 mr-2" />
+                                Open Original
+                              </a>
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
