@@ -1,4 +1,4 @@
-import { MediaFilters } from "@/components/publicity-gpt/filter-sidebar";
+import { MediaFilters } from "@/lib/types";
 import { SearchParams } from "@/components/elevate-gpt/influencer-search";
 
 export interface ProcessedQuery {
