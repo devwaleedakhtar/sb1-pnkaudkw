@@ -21,6 +21,13 @@ export interface MediaResult {
   reach: number;
   publishedAt: Date;
   summary: string;
+  mediaType:
+    | "Online News"
+    | "Print Media"
+    | "Broadcast"
+    | "Podcast"
+    | "Blog"
+    | "Social Media";
 }
 
 export interface Influencer {

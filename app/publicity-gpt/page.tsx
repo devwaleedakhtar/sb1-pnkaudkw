@@ -23,6 +23,7 @@ export default function PublicityGPT() {
   const [searching, setSearching] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [currentQuery, setCurrentQuery] = useState("");
+  const [currentOriginalQuery, setCurrentOriginalQuery] = useState("");
   const [currentFilters, setCurrentFilters] = useState<MediaFilters>({
     dateRange: { start: "", end: "" },
     mediaTypes: [],
@@ -30,6 +31,7 @@ export default function PublicityGPT() {
     outlets: [],
     minReach: 0,
   });
+  const [hasSearched, setHasSearched] = useState(false);
 
   const aiProcessor = new AIQueryProcessor();
 
@@ -37,16 +39,15 @@ export default function PublicityGPT() {
     loadMediaResults();
   }, []);
 
-  useEffect(() => {
-    applyFilters();
-  }, [mediaResults, currentQuery, currentFilters]);
-
   const loadMediaResults = async () => {
     try {
       setLoading(true);
       // For demo purposes, using campaign ID '1'
       const data = await api.getMediaResults("1");
       setMediaResults(data);
+      if (!hasSearched) {
+        setFilteredResults(data);
+      }
     } catch (error) {
       console.error("Error loading media results:", error);
     } finally {
@@ -54,66 +55,21 @@ export default function PublicityGPT() {
     }
   };
 
-  const applyFilters = () => {
-    let filtered = [...mediaResults];
-
-    // Apply search query filter
-    if (currentQuery) {
-      filtered = filtered.filter(
-        (result) =>
-          result.title.toLowerCase().includes(currentQuery.toLowerCase()) ||
-          result.outlet.toLowerCase().includes(currentQuery.toLowerCase()) ||
-          result.summary.toLowerCase().includes(currentQuery.toLowerCase())
-      );
-    }
-
-    // Apply date range filter
-    if (currentFilters.dateRange.start) {
-      const startDate = new Date(currentFilters.dateRange.start);
-      filtered = filtered.filter((result) => result.publishedAt >= startDate);
-    }
-    if (currentFilters.dateRange.end) {
-      const endDate = new Date(currentFilters.dateRange.end);
-      filtered = filtered.filter((result) => result.publishedAt <= endDate);
-    }
-
-    // Apply sentiment filter
-    if (currentFilters.sentiment.length > 0) {
-      filtered = filtered.filter((result) =>
-        currentFilters.sentiment.includes(result.sentiment)
-      );
-    }
-
-    // Apply media types filter
-    if (currentFilters.mediaTypes.length > 0) {
-      // This would need to be implemented based on your data structure
-      // For now, we'll skip this filter since the mock data doesn't include media types
-    }
-
-    // Apply outlets filter
-    if (currentFilters.outlets.length > 0) {
-      filtered = filtered.filter((result) =>
-        currentFilters.outlets.includes(result.outlet)
-      );
-    }
-
-    // Apply minimum reach filter
-    if (currentFilters.minReach > 0) {
-      filtered = filtered.filter(
-        (result) => result.reach >= currentFilters.minReach
-      );
-    }
-
-    setFilteredResults(filtered);
-  };
-
-  const handleSearch = async (query: string) => {
+  const handleSearch = async (query: string, originalQuery?: string) => {
     setSearching(true);
     setCurrentQuery(query);
+    setCurrentOriginalQuery(originalQuery || query);
+    setHasSearched(true);
 
     try {
-      // Simulate search delay
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      // Use the enhanced API with search query, filters, and original query
+      const data = await api.getMediaResults(
+        "1",
+        currentFilters,
+        query,
+        originalQuery
+      );
+      setFilteredResults(data);
     } catch (error) {
       console.error("Error searching:", error);
     } finally {
@@ -121,24 +77,85 @@ export default function PublicityGPT() {
     }
   };
 
-  const handleFiltersChange = (filters: MediaFilters) => {
+  const handleFiltersChange = async (filters: MediaFilters) => {
     setCurrentFilters(filters);
+
+    // If we have a search query or filters applied, re-search with new filters
+    if (hasSearched || currentQuery) {
+      setSearching(true);
+      try {
+        const data = await api.getMediaResults(
+          "1",
+          filters,
+          currentQuery,
+          currentOriginalQuery
+        );
+        setFilteredResults(data);
+      } catch (error) {
+        console.error("Error applying filters:", error);
+      } finally {
+        setSearching(false);
+      }
+    }
   };
 
-  const handleClearFilters = () => {
-    setCurrentFilters({
+  const handleClearFilters = async () => {
+    const clearedFilters: MediaFilters = {
       dateRange: { start: "", end: "" },
       mediaTypes: [],
       sentiment: [],
       outlets: [],
       minReach: 0,
-    });
+    };
+    setCurrentFilters(clearedFilters);
+
+    // If we have a search query, re-search with cleared filters
+    if (hasSearched && currentQuery) {
+      setSearching(true);
+      try {
+        const data = await api.getMediaResults(
+          "1",
+          clearedFilters,
+          currentQuery,
+          currentOriginalQuery
+        );
+        setFilteredResults(data);
+      } catch (error) {
+        console.error("Error clearing filters:", error);
+      } finally {
+        setSearching(false);
+      }
+    } else {
+      // If no search query, show original data and reset search state
+      setFilteredResults(mediaResults);
+      setHasSearched(false);
+      setCurrentQuery("");
+      setCurrentOriginalQuery("");
+    }
   };
 
   const handleSaveSearch = (query: string) => {
     // Simulate saving search
     console.log("Saving search:", query);
     // In a real app, this would save to backend
+  };
+
+  const handleClearSearch = () => {
+    // Reset search state and show original data
+    setCurrentQuery("");
+    setCurrentOriginalQuery("");
+    setHasSearched(false);
+    setFilteredResults(mediaResults);
+
+    // Also clear filters
+    const clearedFilters: MediaFilters = {
+      dateRange: { start: "", end: "" },
+      mediaTypes: [],
+      sentiment: [],
+      outlets: [],
+      minReach: 0,
+    };
+    setCurrentFilters(clearedFilters);
   };
 
   const handleExport = () => {
@@ -151,6 +168,16 @@ export default function PublicityGPT() {
     setRefreshing(true);
     try {
       await loadMediaResults();
+      // If we have active search/filters, re-apply them
+      if (hasSearched || currentQuery) {
+        const data = await api.getMediaResults(
+          "1",
+          currentFilters,
+          currentQuery,
+          currentOriginalQuery
+        );
+        setFilteredResults(data);
+      }
     } finally {
       setRefreshing(false);
     }
@@ -181,6 +208,11 @@ export default function PublicityGPT() {
               active
             </Badge>
           )}
+          {hasSearched && (
+            <Badge variant="outline" className="bg-blue-50 text-blue-700">
+              {filteredResults.length} results found
+            </Badge>
+          )}
           <Button
             onClick={handleRefresh}
             disabled={refreshing}
@@ -199,6 +231,7 @@ export default function PublicityGPT() {
         onSaveSearch={handleSaveSearch}
         onExport={handleExport}
         onFiltersChange={handleFiltersChange}
+        onClearSearch={handleClearSearch}
         loading={searching}
       />
 
@@ -216,6 +249,12 @@ export default function PublicityGPT() {
               Use natural language to find exactly what you're looking for
             </div>
           </div>
+          {hasSearched && currentQuery && (
+            <div className="mt-2 text-sm text-pink-600">
+              <span className="font-medium">Current search:</span> "
+              {currentQuery}"
+            </div>
+          )}
         </CardContent>
       </Card>
 

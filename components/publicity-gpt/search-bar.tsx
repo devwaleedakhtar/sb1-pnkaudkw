@@ -14,14 +14,26 @@ import {
   Settings,
   X,
   Zap,
+  History,
+  Plus,
+  RefreshCw,
+  MessageCircle,
+  ChevronRight,
+  Send,
 } from "lucide-react";
 import { MediaFilters } from "./filter-sidebar";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 
 interface SearchBarProps {
-  onSearch: (query: string) => void;
+  onSearch: (query: string, originalQuery?: string) => void;
   onSaveSearch: (query: string) => void;
   onExport: () => void;
   onFiltersChange: (filters: MediaFilters) => void;
+  onClearSearch?: () => void;
   loading?: boolean;
 }
 
@@ -31,17 +43,29 @@ interface ParsedQuery {
   suggestions: string[];
 }
 
+interface SearchHistoryItem {
+  query: string;
+  timestamp: Date;
+  resultCount: number;
+  filters: MediaFilters;
+}
+
 export function SearchBar({
   onSearch,
   onSaveSearch,
   onExport,
   onFiltersChange,
+  onClearSearch,
   loading,
 }: SearchBarProps) {
   const [query, setQuery] = useState("");
   const [activeMode, setActiveMode] = useState<"ai" | "manual">("ai");
   const [parsedQuery, setParsedQuery] = useState<ParsedQuery | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [searchHistory, setSearchHistory] = useState<SearchHistoryItem[]>([]);
+  const [showHistory, setShowHistory] = useState(false);
+  const [showFollowUp, setShowFollowUp] = useState(false);
+  const [followUpQuery, setFollowUpQuery] = useState("");
 
   // AI Query Processing - This would integrate with an actual LLM in production
   const processAIQuery = async (naturalQuery: string): Promise<ParsedQuery> => {
@@ -115,6 +139,11 @@ export function SearchBar({
       suggestions.push("Media type: Podcast");
     }
 
+    if (lowerQuery.includes("blog") || lowerQuery.includes("blogs")) {
+      filters.mediaTypes = ["Blog"];
+      suggestions.push("Media type: Blog");
+    }
+
     // Outlet parsing
     if (lowerQuery.includes("techcrunch")) {
       filters.outlets = ["TechCrunch"];
@@ -124,6 +153,16 @@ export function SearchBar({
     if (lowerQuery.includes("wired")) {
       filters.outlets = ["Wired"];
       suggestions.push("Outlet: Wired");
+    }
+
+    if (lowerQuery.includes("forbes")) {
+      filters.outlets = ["Forbes"];
+      suggestions.push("Outlet: Forbes");
+    }
+
+    if (lowerQuery.includes("reuters")) {
+      filters.outlets = ["Reuters"];
+      suggestions.push("Outlet: Reuters");
     }
 
     // Reach parsing
@@ -141,9 +180,15 @@ export function SearchBar({
     const cleanQuery = naturalQuery
       .replace(/\b(last|past|this)\s+(week|month|year)\b/gi, "")
       .replace(/\b(positive|negative|good|bad|favorable|critical)\b/gi, "")
-      .replace(/\b(news|articles|social media|podcast|audio)\b/gi, "")
+      .replace(
+        /\b(news|articles|social media|podcast|audio|blog|blogs)\b/gi,
+        ""
+      )
       .replace(/\b(high reach|popular|viral|trending)\b/gi, "")
-      .replace(/\b(techcrunch|wired|cnn|forbes)\b/gi, "")
+      .replace(
+        /\b(techcrunch|wired|forbes|reuters|cnn|associated press)\b/gi,
+        ""
+      )
       .replace(/\s+/g, " ")
       .trim();
 
@@ -156,24 +201,58 @@ export function SearchBar({
     };
   };
 
-  const handleAISearch = async () => {
-    if (!query.trim()) return;
+  const handleAISearch = async (searchQuery?: string) => {
+    const queryToProcess = searchQuery || query;
+    if (!queryToProcess.trim()) return;
 
     try {
-      const parsed = await processAIQuery(query);
+      const parsed = await processAIQuery(queryToProcess);
       setParsedQuery(parsed);
       onFiltersChange(parsed.filters);
-      onSearch(parsed.query);
+      onSearch(parsed.query, queryToProcess); // Pass original query as second parameter
+
+      // Add to search history
+      const historyItem: SearchHistoryItem = {
+        query: parsed.query,
+        timestamp: new Date(),
+        resultCount: 0, // This would be updated with actual results
+        filters: parsed.filters,
+      };
+      setSearchHistory((prev) => [historyItem, ...prev.slice(0, 4)]); // Keep last 5 searches
+
+      // Show follow-up option after search
+      setShowFollowUp(true);
+      setFollowUpQuery("");
     } catch (error) {
       console.error("AI processing error:", error);
       // Fallback to regular search
-      onSearch(query);
+      onSearch(queryToProcess, queryToProcess);
     }
   };
 
-  const handleManualSearch = () => {
-    if (query.trim()) {
-      onSearch(query.trim());
+  const handleManualSearch = (searchQuery?: string) => {
+    const queryToProcess = searchQuery || query;
+    if (queryToProcess.trim()) {
+      onSearch(queryToProcess.trim(), queryToProcess.trim());
+
+      // Add to search history
+      const historyItem: SearchHistoryItem = {
+        query: queryToProcess.trim(),
+        timestamp: new Date(),
+        resultCount: 0,
+        filters: {
+          dateRange: { start: "", end: "" },
+          mediaTypes: [],
+          sentiment: [],
+          outlets: [],
+          minReach: 0,
+        },
+      };
+      setSearchHistory((prev) => [historyItem, ...prev.slice(0, 4)]);
+
+      // Show follow-up option after search
+      setShowFollowUp(true);
+      setFollowUpQuery("");
     }
   };
 
@@ -183,6 +262,19 @@ export function SearchBar({
       handleAISearch();
     } else {
       handleManualSearch();
+    }
+  };
+
+  const handleFollowUpSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (followUpQuery.trim()) {
+      if (activeMode === "ai") {
+        handleAISearch(followUpQuery);
+      } else {
+        handleManualSearch(followUpQuery);
+      }
+      setQuery(followUpQuery);
+      setFollowUpQuery("");
     }
   };
 
@@ -198,6 +290,22 @@ export function SearchBar({
         (_, i) => i !== index
       );
       setParsedQuery({ ...parsedQuery, suggestions: newSuggestions });
+    }
+  };
+
+  const handleHistoryClick = (historyItem: SearchHistoryItem) => {
+    setQuery(historyItem.query);
+    onFiltersChange(historyItem.filters);
+    onSearch(historyItem.query, historyItem.query);
+    setShowHistory(false);
+  };
+
+  const handleExampleClick = (example: string) => {
+    setQuery(example);
+    if (activeMode === "ai") {
+      handleAISearch(example);
+    } else {
+      handleManualSearch(example);
     }
   };
 
@@ -228,6 +336,17 @@ export function SearchBar({
             </TabsList>
 
             <div className="flex gap-2">
+              {searchHistory.length > 0 && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowHistory(!showHistory)}
+                >
+                  <History className="h-4 w-4 mr-2" />
+                  History
+                </Button>
+              )}
               <Button
                 type="button"
                 variant="outline"
@@ -241,6 +360,23 @@ export function SearchBar({
                 <Download className="h-4 w-4 mr-2" />
                 Export
               </Button>
+              {onClearSearch && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setQuery("");
+                    setParsedQuery(null);
+                    setShowFollowUp(false);
+                    setFollowUpQuery("");
+                    onClearSearch();
+                  }}
+                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                >
+                  <X className="h-4 w-4 mr-2" />
+                  Clear
+                </Button>
+              )}
             </div>
           </div>
 
@@ -305,6 +441,77 @@ export function SearchBar({
               </div>
             )}
 
+            {/* Manual Follow-up Input */}
+            {showFollowUp && (
+              <Collapsible open={showFollowUp} onOpenChange={setShowFollowUp}>
+                <CollapsibleTrigger className="flex items-center gap-2 text-sm font-medium text-gray-700 hover:text-gray-900">
+                  <MessageCircle className="h-4 w-4" />
+                  <span>Follow-up Search</span>
+                  <ChevronRight className="h-4 w-4" />
+                </CollapsibleTrigger>
+                <CollapsibleContent className="mt-2">
+                  <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-lg border border-blue-200">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Plus className="h-4 w-4 text-blue-500" />
+                      <span className="text-sm font-medium text-blue-700">
+                        Refine your search:
+                      </span>
+                    </div>
+                    <form
+                      onSubmit={handleFollowUpSubmit}
+                      className="flex gap-2"
+                    >
+                      <div className="flex-1">
+                        <Input
+                          value={followUpQuery}
+                          onChange={(e) => setFollowUpQuery(e.target.value)}
+                          placeholder="Enter follow-up query (e.g., 'also show negative mentions', 'include Forbes articles')"
+                          className="text-sm"
+                        />
+                      </div>
+                      <Button
+                        type="submit"
+                        size="sm"
+                        disabled={!followUpQuery.trim() || loading}
+                        className="bg-blue-500 hover:bg-blue-600"
+                      >
+                        <Send className="h-4 w-4" />
+                      </Button>
+                    </form>
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
+            )}
+
+            {/* Search History */}
+            {showHistory && searchHistory.length > 0 && (
+              <div className="bg-gray-50 p-4 rounded-lg border">
+                <div className="flex items-center gap-2 mb-3">
+                  <History className="h-4 w-4 text-gray-500" />
+                  <span className="text-sm font-medium text-gray-700">
+                    Recent Searches
+                  </span>
+                </div>
+                <div className="space-y-2">
+                  {searchHistory.map((item, index) => (
+                    <button
+                      key={index}
+                      onClick={() => handleHistoryClick(item)}
+                      className="w-full text-left p-2 hover:bg-white rounded border text-sm"
+                    >
+                      <div className="font-medium text-gray-900">
+                        {item.query}
+                      </div>
+                      <div className="text-xs text-gray-500 mt-1">
+                        {item.timestamp.toLocaleString()} • {item.resultCount}{" "}
+                        results
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Example queries */}
             <div className="space-y-2">
               <p className="text-sm text-gray-600">Try these examples:</p>
@@ -314,7 +521,7 @@ export function SearchBar({
                     key={index}
                     variant="outline"
                     size="sm"
-                    onClick={() => setQuery(example)}
+                    onClick={() => handleExampleClick(example)}
                     className="text-xs"
                   >
                     {example}
@@ -343,6 +550,83 @@ export function SearchBar({
                 {loading ? "Searching..." : "Search"}
               </Button>
             </form>
+
+            {/* Manual Follow-up Input */}
+            {showFollowUp && (
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-lg border border-blue-200 mt-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <Plus className="h-4 w-4 text-blue-500" />
+                  <span className="text-sm font-medium text-blue-700">
+                    Follow-up Search:
+                  </span>
+                </div>
+                <form onSubmit={handleFollowUpSubmit} className="flex gap-2">
+                  <div className="flex-1">
+                    <Input
+                      value={followUpQuery}
+                      onChange={(e) => setFollowUpQuery(e.target.value)}
+                      placeholder="Enter follow-up search terms..."
+                      className="text-sm"
+                    />
+                  </div>
+                  <Button
+                    type="submit"
+                    size="sm"
+                    disabled={!followUpQuery.trim() || loading}
+                    className="bg-blue-500 hover:bg-blue-600"
+                  >
+                    <Send className="h-4 w-4" />
+                  </Button>
+                </form>
+              </div>
+            )}
+
+            {/* Search History for Manual Mode */}
+            {showHistory && searchHistory.length > 0 && (
+              <div className="bg-gray-50 p-4 rounded-lg border mt-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <History className="h-4 w-4 text-gray-500" />
+                  <span className="text-sm font-medium text-gray-700">
+                    Recent Searches
+                  </span>
+                </div>
+                <div className="space-y-2">
+                  {searchHistory.map((item, index) => (
+                    <button
+                      key={index}
+                      onClick={() => handleHistoryClick(item)}
+                      className="w-full text-left p-2 hover:bg-white rounded border text-sm"
+                    >
+                      <div className="font-medium text-gray-900">
+                        {item.query}
+                      </div>
+                      <div className="text-xs text-gray-500 mt-1">
+                        {item.timestamp.toLocaleString()} • {item.resultCount}{" "}
+                        results
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Example queries for Manual Mode */}
+            <div className="space-y-2 mt-4">
+              <p className="text-sm text-gray-600">Try these examples:</p>
+              <div className="flex flex-wrap gap-2">
+                {exampleQueries.map((example, index) => (
+                  <Button
+                    key={index}
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleExampleClick(example)}
+                    className="text-xs"
+                  >
+                    {example}
+                  </Button>
+                ))}
+              </div>
+            </div>
           </TabsContent>
         </Tabs>
       </CardContent>

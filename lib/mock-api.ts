@@ -7,6 +7,7 @@ import {
   DashboardStats,
 } from "./types";
 import type { SocialTracker } from "./types";
+import { MediaFilters } from "@/components/publicity-gpt/filter-sidebar";
 import {
   mockCampaigns,
   mockMediaResults,
@@ -18,6 +19,33 @@ import {
 
 // Simulate API delay
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+// Example query mappings
+const getExampleQueryResults = (query: string): string[] => {
+  const lowerQuery = query.toLowerCase();
+
+  if (lowerQuery.includes("positive techcrunch articles from last week")) {
+    // Return IDs of positive TechCrunch articles from recent dates
+    return ["1", "3", "20"];
+  }
+
+  if (lowerQuery.includes("negative mentions with high reach")) {
+    // Return IDs of negative articles with high reach
+    return ["2", "6", "14", "16", "18", "24"];
+  }
+
+  if (lowerQuery.includes("podcast mentions from this month")) {
+    // Return IDs of podcast articles
+    return ["25", "26"];
+  }
+
+  if (lowerQuery.includes("social media posts about our product")) {
+    // Return IDs that might be social media related (none in our current data, so return empty)
+    return [];
+  }
+
+  return [];
+};
 
 export const api = {
   // Campaign APIs
@@ -62,9 +90,79 @@ export const api = {
   },
 
   // Media APIs
-  async getMediaResults(campaignId: string): Promise<MediaResult[]> {
+  async getMediaResults(
+    campaignId: string,
+    filters?: MediaFilters,
+    searchQuery?: string,
+    originalQuery?: string
+  ): Promise<MediaResult[]> {
     await delay(400);
-    return mockMediaResults.filter((m) => m.campaignId === campaignId);
+
+    let results = mockMediaResults.filter((m) => m.campaignId === campaignId);
+
+    // Check if this is an example query first - use original query if available
+    const queryToCheck = originalQuery || searchQuery;
+    if (queryToCheck && queryToCheck.trim()) {
+      const exampleResultIds = getExampleQueryResults(queryToCheck);
+      if (exampleResultIds.length > 0) {
+        results = results.filter((result) =>
+          exampleResultIds.includes(result.id)
+        );
+        return results; // Return early for example queries, don't apply other filters
+      }
+    }
+
+    // Apply search query filter
+    if (searchQuery && searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      results = results.filter(
+        (result) =>
+          result.title.toLowerCase().includes(query) ||
+          result.outlet.toLowerCase().includes(query) ||
+          result.summary.toLowerCase().includes(query)
+      );
+    }
+
+    // Apply filters if provided
+    if (filters) {
+      // Apply date range filter
+      if (filters.dateRange.start) {
+        const startDate = new Date(filters.dateRange.start);
+        results = results.filter((result) => result.publishedAt >= startDate);
+      }
+      if (filters.dateRange.end) {
+        const endDate = new Date(filters.dateRange.end);
+        results = results.filter((result) => result.publishedAt <= endDate);
+      }
+
+      // Apply sentiment filter
+      if (filters.sentiment.length > 0) {
+        results = results.filter((result) =>
+          filters.sentiment.includes(result.sentiment)
+        );
+      }
+
+      // Apply media types filter
+      if (filters.mediaTypes.length > 0) {
+        results = results.filter((result) =>
+          filters.mediaTypes.includes(result.mediaType)
+        );
+      }
+
+      // Apply outlets filter
+      if (filters.outlets.length > 0) {
+        results = results.filter((result) =>
+          filters.outlets.includes(result.outlet)
+        );
+      }
+
+      // Apply minimum reach filter
+      if (filters.minReach > 0) {
+        results = results.filter((result) => result.reach >= filters.minReach);
+      }
+    }
+
+    return results;
   },
 
   // Influencer APIs

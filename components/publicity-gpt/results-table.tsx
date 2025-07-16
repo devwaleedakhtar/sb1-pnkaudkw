@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { MediaResult } from "@/lib/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -32,6 +33,8 @@ import {
   ThumbsUp,
   ThumbsDown,
   Minus,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { formatDistanceToNow, format } from "date-fns";
 
@@ -40,7 +43,16 @@ interface ResultsTableProps {
   loading?: boolean;
 }
 
+const ITEMS_PER_PAGE = 10;
+
 export function ResultsTable({ results, loading }: ResultsTableProps) {
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const totalPages = Math.ceil(results.length / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const endIndex = startIndex + ITEMS_PER_PAGE;
+  const currentResults = results.slice(startIndex, endIndex);
+
   const getSentimentColor = (sentiment: MediaResult["sentiment"]) => {
     switch (sentiment) {
       case "positive":
@@ -98,7 +110,16 @@ export function ResultsTable({ results, loading }: ResultsTableProps) {
     // In a real app, this would download article content
   };
 
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
   const totalReach = results.reduce((sum, r) => sum + r.reach, 0);
+
+  // Reset to page 1 when results change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [results]);
 
   if (loading) {
     return (
@@ -167,149 +188,231 @@ export function ResultsTable({ results, loading }: ResultsTableProps) {
             </div>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-[40%]">Article</TableHead>
-                  <TableHead className="w-[15%]">Outlet</TableHead>
-                  <TableHead className="w-[15%]">Date</TableHead>
-                  <TableHead className="w-[12%]">Sentiment</TableHead>
-                  <TableHead className="w-[12%]">Reach</TableHead>
-                  <TableHead className="w-[6%]">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {results.map((result) => (
-                  <TableRow
-                    key={result.id}
-                    className="hover:bg-gray-50/50 group"
-                  >
-                    <TableCell className="py-4">
-                      <div className="space-y-2">
-                        <div className="font-medium text-gray-900 line-clamp-2 group-hover:text-blue-600 transition-colors">
-                          {result.title}
-                        </div>
-                        <div className="text-sm text-gray-600 line-clamp-2 leading-relaxed">
-                          {result.summary}
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell className="py-4">
-                      <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
-                          <Building className="h-4 w-4 text-gray-500" />
-                        </div>
-                        <div>
-                          <div className="font-medium text-sm">
-                            {result.outlet}
+          <>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-[40%]">Article</TableHead>
+                    <TableHead className="w-[15%]">Outlet</TableHead>
+                    <TableHead className="w-[15%]">Date</TableHead>
+                    <TableHead className="w-[12%]">Sentiment</TableHead>
+                    <TableHead className="w-[12%]">Reach</TableHead>
+                    <TableHead className="w-[6%]">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {currentResults.map((result) => (
+                    <TableRow
+                      key={result.id}
+                      className="hover:bg-gray-50/50 group"
+                    >
+                      <TableCell className="py-4">
+                        <div className="space-y-2">
+                          <div className="font-medium text-gray-900 line-clamp-2 group-hover:text-blue-600 transition-colors">
+                            {result.title}
                           </div>
-                          <div className="text-xs text-gray-500">Media</div>
+                          <div className="text-sm text-gray-600 line-clamp-2 leading-relaxed">
+                            {result.summary}
+                          </div>
                         </div>
-                      </div>
-                    </TableCell>
-                    <TableCell className="py-4">
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-1 text-sm">
-                          <Calendar className="h-3 w-3 text-gray-400" />
-                          <span>
-                            {format(result.publishedAt, "MMM d, yyyy")}
+                      </TableCell>
+                      <TableCell className="py-4">
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
+                            <Building className="h-4 w-4 text-gray-500" />
+                          </div>
+                          <div>
+                            <div className="font-medium text-sm">
+                              {result.outlet}
+                            </div>
+                            <div className="text-xs text-gray-500">Media</div>
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell className="py-4">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-1 text-sm">
+                            <Calendar className="h-3 w-3 text-gray-400" />
+                            <span>
+                              {format(result.publishedAt, "MMM d, yyyy")}
+                            </span>
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            {formatDistanceToNow(result.publishedAt, {
+                              addSuffix: true,
+                            })}
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell className="py-4">
+                        <Badge
+                          className={`${getSentimentColor(
+                            result.sentiment
+                          )} flex items-center gap-1`}
+                        >
+                          {getSentimentIcon(result.sentiment)}
+                          <span className="capitalize">{result.sentiment}</span>
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="py-4">
+                        <div className="flex items-center gap-2">
+                          <TrendingUp className="h-4 w-4 text-gray-400" />
+                          <span
+                            className={`font-medium ${getReachColor(
+                              result.reach
+                            )}`}
+                          >
+                            {formatReach(result.reach)}
                           </span>
                         </div>
-                        <div className="text-xs text-gray-500">
-                          {formatDistanceToNow(result.publishedAt, {
-                            addSuffix: true,
-                          })}
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell className="py-4">
-                      <Badge
-                        className={`${getSentimentColor(
-                          result.sentiment
-                        )} flex items-center gap-1`}
-                      >
-                        {getSentimentIcon(result.sentiment)}
-                        <span className="capitalize">{result.sentiment}</span>
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="py-4">
-                      <div className="flex items-center gap-2">
-                        <TrendingUp className="h-4 w-4 text-gray-400" />
-                        <span
-                          className={`font-medium ${getReachColor(
-                            result.reach
-                          )}`}
-                        >
-                          {formatReach(result.reach)}
-                        </span>
-                      </div>
-                    </TableCell>
-                    <TableCell className="py-4">
-                      <div className="flex items-center gap-1">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          asChild
-                          className="h-8 w-8 p-0 hover:bg-blue-50 hover:text-blue-600"
-                        >
-                          <a
-                            href={result.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
+                      </TableCell>
+                      <TableCell className="py-4">
+                        <div className="flex items-center gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            asChild
+                            className="h-8 w-8 p-0 hover:bg-blue-50 hover:text-blue-600"
                           >
-                            <Eye className="h-4 w-4" />
-                          </a>
-                        </Button>
+                            <a
+                              href={result.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              <Eye className="h-4 w-4" />
+                            </a>
+                          </Button>
 
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-8 w-8 p-0 hover:bg-gray-50"
-                            >
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="w-48">
-                            <DropdownMenuItem
-                              onClick={() => handleSaveArticle(result)}
-                            >
-                              <BookmarkPlus className="h-4 w-4 mr-2" />
-                              Save Article
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => handleShareArticle(result)}
-                            >
-                              <Share2 className="h-4 w-4 mr-2" />
-                              Share
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => handleDownloadArticle(result)}
-                            >
-                              <Download className="h-4 w-4 mr-2" />
-                              Download
-                            </DropdownMenuItem>
-                            <DropdownMenuItem asChild>
-                              <a
-                                href={result.url}
-                                target="_blank"
-                                rel="noopener noreferrer"
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0 hover:bg-gray-50"
                               >
-                                <ExternalLink className="h-4 w-4 mr-2" />
-                                Open Original
-                              </a>
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-48">
+                              <DropdownMenuItem
+                                onClick={() => handleSaveArticle(result)}
+                              >
+                                <BookmarkPlus className="h-4 w-4 mr-2" />
+                                Save Article
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => handleShareArticle(result)}
+                              >
+                                <Share2 className="h-4 w-4 mr-2" />
+                                Share
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => handleDownloadArticle(result)}
+                              >
+                                <Download className="h-4 w-4 mr-2" />
+                                Download
+                              </DropdownMenuItem>
+                              <DropdownMenuItem asChild>
+                                <a
+                                  href={result.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                >
+                                  <ExternalLink className="h-4 w-4 mr-2" />
+                                  Open Original
+                                </a>
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between mt-6">
+                <div className="text-sm text-gray-600">
+                  Showing {startIndex + 1} to{" "}
+                  {Math.min(endIndex, results.length)} of {results.length}{" "}
+                  results
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 1}
+                  >
+                    <ChevronLeft className="h-4 w-4 mr-1" />
+                    Previous
+                  </Button>
+
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                      (page) => {
+                        // Show first page, last page, current page, and pages around current
+                        const showPage =
+                          page === 1 ||
+                          page === totalPages ||
+                          (page >= currentPage - 1 && page <= currentPage + 1);
+
+                        if (!showPage) {
+                          // Show ellipsis for gaps
+                          if (page === 2 && currentPage > 4) {
+                            return (
+                              <span key={page} className="px-2 text-gray-400">
+                                ...
+                              </span>
+                            );
+                          }
+                          if (
+                            page === totalPages - 1 &&
+                            currentPage < totalPages - 3
+                          ) {
+                            return (
+                              <span key={page} className="px-2 text-gray-400">
+                                ...
+                              </span>
+                            );
+                          }
+                          return null;
+                        }
+
+                        return (
+                          <Button
+                            key={page}
+                            variant={
+                              page === currentPage ? "default" : "outline"
+                            }
+                            size="sm"
+                            onClick={() => handlePageChange(page)}
+                            className="w-8 h-8 p-0"
+                          >
+                            {page}
+                          </Button>
+                        );
+                      }
+                    )}
+                  </div>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                  >
+                    Next
+                    <ChevronRight className="h-4 w-4 ml-1" />
+                  </Button>
+                </div>
+              </div>
+            )}
+          </>
         )}
       </CardContent>
     </Card>
