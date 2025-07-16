@@ -90,30 +90,26 @@ export default function Dashboard() {
     {
       title: "Create Campaign",
       description: "Launch a new marketing campaign",
-      icon: Plus,
       href: "/campaigns/new",
-      gradient: "from-pink-500 to-rose-500",
+      icon: Plus,
     },
     {
       title: "Find Influencers",
       description: "Discover perfect brand ambassadors",
-      icon: Users,
       href: "/elevate-gpt",
-      gradient: "from-blue-500 to-cyan-500",
+      icon: Users,
     },
     {
       title: "Track Social Media",
       description: "Monitor brand mentions and trends",
-      icon: MessageSquare,
       href: "/social-gpt",
-      gradient: "from-purple-500 to-indigo-500",
+      icon: MessageSquare,
     },
     {
       title: "Media Coverage",
       description: "Find relevant media opportunities",
-      icon: Zap,
       href: "/publicity-gpt",
-      gradient: "from-green-500 to-emerald-500",
+      icon: Zap,
     },
   ];
 
@@ -138,10 +134,7 @@ export default function Dashboard() {
           />
           Refresh
         </Button>
-        <Button
-          asChild
-          className="bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 text-white shadow-lg"
-        >
+        <Button asChild className="bg-pink-500 hover:bg-pink-600 text-white">
           <Link href="/campaigns/new">
             <Plus className="h-4 w-4 mr-2" />
             New Campaign
@@ -154,19 +147,19 @@ export default function Dashboard() {
           <TabsList className="grid w-full grid-cols-3 bg-white shadow-sm">
             <TabsTrigger
               value="overview"
-              className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-pink-500 data-[state=active]:to-rose-500 data-[state=active]:text-white"
+              className="data-[state=active]:bg-pink-500 data-[state=active]:text-white"
             >
               Overview
             </TabsTrigger>
             <TabsTrigger
               value="performance"
-              className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-pink-500 data-[state=active]:to-rose-500 data-[state=active]:text-white"
+              className="data-[state=active]:bg-pink-500 data-[state=active]:text-white"
             >
               Performance
             </TabsTrigger>
             <TabsTrigger
               value="activity"
-              className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-pink-500 data-[state=active]:to-rose-500 data-[state=active]:text-white"
+              className="data-[state=active]:bg-pink-500 data-[state=active]:text-white"
             >
               Activity
             </TabsTrigger>
@@ -174,16 +167,19 @@ export default function Dashboard() {
 
           <TabsContent value="overview" className="space-y-6">
             {/* Campaign Info Card */}
-            <Card className="bg-gradient-to-r from-pink-50 to-rose-50 border-pink-200">
+            <Card className="bg-white border border-gray-200">
               <CardHeader>
                 <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="text-xl text-gray-900">
-                      {selectedCampaign.name}
-                    </CardTitle>
-                    <p className="text-gray-600 mt-1">
-                      {selectedCampaign.description}
-                    </p>
+                  <div className="flex items-center space-x-3">
+                    <div className="w-1 h-12 bg-pink-500 rounded-full" />
+                    <div>
+                      <CardTitle className="text-xl text-gray-900">
+                        {selectedCampaign.name}
+                      </CardTitle>
+                      <p className="text-gray-600 mt-1">
+                        {selectedCampaign.description}
+                      </p>
+                    </div>
                   </div>
                   <div className="flex items-center space-x-3">
                     <div className="flex items-center space-x-2">
@@ -225,19 +221,18 @@ export default function Dashboard() {
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                  {quickActions.map((action) => (
+                  {quickActions.map((action, index) => (
                     <Link key={action.title} href={action.href}>
-                      <Card className="h-full hover:shadow-lg transition-all duration-200 cursor-pointer group">
-                        <CardContent className="p-4">
-                          <div
-                            className={`w-12 h-12 rounded-xl bg-gradient-to-r ${action.gradient} flex items-center justify-center mb-3 group-hover:scale-110 transition-transform`}
-                          >
-                            <action.icon className="h-6 w-6 text-white" />
+                      <Card className="h-full hover:shadow-md transition-all duration-200 cursor-pointer group border border-gray-200 bg-white">
+                        <CardContent className="p-6">
+                          <div className="flex items-center space-x-3 mb-3">
+                            <div className="w-1 h-8 rounded-full bg-pink-500" />
+                            <action.icon className="h-4 w-4 text-gray-400" />
+                            <h3 className="font-semibold text-gray-900">
+                              {action.title}
+                            </h3>
                           </div>
-                          <h3 className="font-semibold text-gray-900 mb-1">
-                            {action.title}
-                          </h3>
-                          <p className="text-sm text-gray-600">
+                          <p className="text-sm text-gray-600 ml-7">
                             {action.description}
                           </p>
                         </CardContent>
@@ -261,15 +256,21 @@ export default function Dashboard() {
                   </CardHeader>
                   <CardContent>
                     <div className="grid grid-cols-2 gap-4">
-                      <div className="text-center p-4 bg-gradient-to-r from-pink-50 to-rose-50 rounded-lg">
-                        <div className="text-2xl font-bold text-pink-600">
-                          {stats.totalReach.toLocaleString()}
+                      <div className="text-center p-4 bg-white border border-gray-200 rounded-lg">
+                        <div className="flex items-center justify-center space-x-2 mb-2">
+                          <div className="w-1 h-6 bg-pink-500 rounded-full" />
+                          <div className="text-2xl font-bold text-gray-900">
+                            {stats.totalReach.toLocaleString()}
+                          </div>
                         </div>
                         <div className="text-sm text-gray-600">Total Reach</div>
                       </div>
-                      <div className="text-center p-4 bg-gradient-to-r from-blue-50 to-cyan-50 rounded-lg">
-                        <div className="text-2xl font-bold text-blue-600">
-                          {stats.mediaItems}
+                      <div className="text-center p-4 bg-white border border-gray-200 rounded-lg">
+                        <div className="flex items-center justify-center space-x-2 mb-2">
+                          <div className="w-1 h-6 bg-gray-300 rounded-full" />
+                          <div className="text-2xl font-bold text-gray-900">
+                            {stats.mediaItems}
+                          </div>
                         </div>
                         <div className="text-sm text-gray-600">Media Items</div>
                       </div>
@@ -288,9 +289,9 @@ export default function Dashboard() {
           </TabsContent>
         </Tabs>
       ) : (
-        <Card className="text-center py-16">
+        <Card className="text-center py-16 bg-white border border-gray-200">
           <CardContent>
-            <div className="w-16 h-16 mx-auto mb-6 bg-gradient-to-r from-pink-500 to-rose-500 rounded-full flex items-center justify-center">
+            <div className="w-16 h-16 mx-auto mb-6 bg-pink-500 rounded-full flex items-center justify-center">
               <Target className="h-8 w-8 text-white" />
             </div>
             <h2 className="text-2xl font-bold text-gray-900 mb-4">
@@ -302,7 +303,7 @@ export default function Dashboard() {
             </p>
             <Button
               asChild
-              className="bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 text-white shadow-lg"
+              className="bg-pink-500 hover:bg-pink-600 text-white"
             >
               <Link href="/campaigns/new">
                 <Plus className="h-4 w-4 mr-2" />

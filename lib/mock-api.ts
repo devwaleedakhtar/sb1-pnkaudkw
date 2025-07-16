@@ -171,6 +171,52 @@ export const api = {
     return mockInfluencers.filter((i) => i.campaignId === campaignId);
   },
 
+  async searchInfluencers(
+    campaignId: string,
+    params: any
+  ): Promise<Influencer[]> {
+    await delay(600);
+    let results = mockInfluencers.filter((i) => i.campaignId === campaignId);
+
+    // Apply platform filter
+    if (params.platform && params.platform !== "all") {
+      results = results.filter((i) => i.platform === params.platform);
+    }
+
+    // Apply category filter
+    if (params.category && params.category !== "all") {
+      results = results.filter(
+        (i) => i.category.toLowerCase() === params.category.toLowerCase()
+      );
+    }
+
+    // Apply follower range filter
+    if (params.minFollowers) {
+      results = results.filter((i) => i.followers >= params.minFollowers);
+    }
+    if (params.maxFollowers) {
+      results = results.filter((i) => i.followers <= params.maxFollowers);
+    }
+
+    // Apply engagement filter
+    if (params.minEngagement) {
+      results = results.filter((i) => i.engagement >= params.minEngagement);
+    }
+
+    // Apply text search filter
+    if (params.query && params.query.trim()) {
+      const query = params.query.toLowerCase();
+      results = results.filter(
+        (i) =>
+          i.name.toLowerCase().includes(query) ||
+          i.category.toLowerCase().includes(query) ||
+          i.platform.toLowerCase().includes(query)
+      );
+    }
+
+    return results;
+  },
+
   // Social APIs
   async getSocialPosts(campaignId: string): Promise<SocialPost[]> {
     await delay(400);

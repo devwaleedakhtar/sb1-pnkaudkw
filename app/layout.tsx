@@ -1,12 +1,15 @@
 "use client";
 
 import "./globals.css";
-import { Inter } from "next/font/google";
+import { Poppins } from "next/font/google";
 import { useState, createContext, useContext, ReactNode } from "react";
 import { Campaign } from "@/lib/types";
 import { Sidebar } from "@/components/layout/sidebar";
 
-const inter = Inter({ subsets: ["latin"] });
+const poppins = Poppins({
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700"],
+});
 
 // Create Campaign Context
 interface CampaignContextType {
@@ -37,7 +40,7 @@ export default function RootLayout({
 
   return (
     <html lang="en" className="h-full">
-      <body className={`${inter.className} h-full`}>
+      <body className={`${poppins.className} h-full`}>
         <CampaignContext.Provider
           value={{ selectedCampaign, setSelectedCampaign }}
         >

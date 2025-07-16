@@ -534,6 +534,230 @@ export const mockInfluencers: Influencer[] = [
       "https://images.pexels.com/photos/1987301/pexels-photo-1987301.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&fit=crop",
     verified: true,
   },
+  // Tech YouTubers
+  {
+    id: "4",
+    campaignId: "1",
+    name: "Alex TechGuru",
+    platform: "youtube",
+    followers: 750000,
+    engagement: 3.9,
+    category: "Technology",
+    avatar:
+      "https://images.pexels.com/photos/1222271/pexels-photo-1222271.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&fit=crop",
+    verified: true,
+  },
+  {
+    id: "5",
+    campaignId: "1",
+    name: "TechWithTina",
+    platform: "youtube",
+    followers: 320000,
+    engagement: 4.8,
+    category: "Technology",
+    avatar:
+      "https://images.pexels.com/photos/1239291/pexels-photo-1239291.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&fit=crop",
+    verified: true,
+  },
+  {
+    id: "6",
+    campaignId: "1",
+    name: "GadgetMaster",
+    platform: "youtube",
+    followers: 180000,
+    engagement: 4.1,
+    category: "Technology",
+    avatar:
+      "https://images.pexels.com/photos/1681010/pexels-photo-1681010.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&fit=crop",
+    verified: false,
+  },
+  // Fashion influencers on Instagram
+  {
+    id: "7",
+    campaignId: "1",
+    name: "StyleByBella",
+    platform: "instagram",
+    followers: 680000,
+    engagement: 5.2,
+    category: "Fashion",
+    avatar:
+      "https://images.pexels.com/photos/1130626/pexels-photo-1130626.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&fit=crop",
+    verified: true,
+  },
+  {
+    id: "8",
+    campaignId: "1",
+    name: "FashionForward_Mia",
+    platform: "instagram",
+    followers: 890000,
+    engagement: 4.7,
+    category: "Fashion",
+    avatar:
+      "https://images.pexels.com/photos/1542085/pexels-photo-1542085.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&fit=crop",
+    verified: true,
+  },
+  // Micro-influencers in fitness
+  {
+    id: "9",
+    campaignId: "1",
+    name: "FitLifeJenna",
+    platform: "instagram",
+    followers: 45000,
+    engagement: 6.1,
+    category: "Fitness",
+    avatar:
+      "https://images.pexels.com/photos/1391498/pexels-photo-1391498.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&fit=crop",
+    verified: false,
+  },
+  {
+    id: "10",
+    campaignId: "1",
+    name: "HealthyHabits_Sam",
+    platform: "instagram",
+    followers: 67000,
+    engagement: 5.8,
+    category: "Fitness",
+    avatar:
+      "https://images.pexels.com/photos/1040880/pexels-photo-1040880.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&fit=crop",
+    verified: false,
+  },
+  {
+    id: "11",
+    campaignId: "1",
+    name: "WorkoutWarrior_Kate",
+    platform: "youtube",
+    followers: 89000,
+    engagement: 4.9,
+    category: "Fitness",
+    avatar:
+      "https://images.pexels.com/photos/1181686/pexels-photo-1181686.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&fit=crop",
+    verified: false,
+  },
+  // Gaming streamers
+  {
+    id: "12",
+    campaignId: "1",
+    name: "ProGamer_Jake",
+    platform: "youtube",
+    followers: 420000,
+    engagement: 4.3,
+    category: "Gaming",
+    avatar:
+      "https://images.pexels.com/photos/1043471/pexels-photo-1043471.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&fit=crop",
+    verified: true,
+  },
+  {
+    id: "13",
+    campaignId: "1",
+    name: "GamingQueen_Luna",
+    platform: "tiktok",
+    followers: 650000,
+    engagement: 5.4,
+    category: "Gaming",
+    avatar:
+      "https://images.pexels.com/photos/1239288/pexels-photo-1239288.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&fit=crop",
+    verified: true,
+  },
+  // Travel bloggers
+  {
+    id: "14",
+    campaignId: "1",
+    name: "WanderlustWill",
+    platform: "instagram",
+    followers: 52000,
+    engagement: 4.6,
+    category: "Travel",
+    avatar:
+      "https://images.pexels.com/photos/1040881/pexels-photo-1040881.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&fit=crop",
+    verified: false,
+  },
+  {
+    id: "15",
+    campaignId: "1",
+    name: "AdventureAva",
+    platform: "youtube",
+    followers: 48000,
+    engagement: 4.2,
+    category: "Travel",
+    avatar:
+      "https://images.pexels.com/photos/1987301/pexels-photo-1987301.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&fit=crop",
+    verified: false,
+  },
+  // Beauty influencers on TikTok
+  {
+    id: "16",
+    campaignId: "1",
+    name: "BeautyByZoe",
+    platform: "tiktok",
+    followers: 780000,
+    engagement: 5.9,
+    category: "Beauty",
+    avatar:
+      "https://images.pexels.com/photos/1130626/pexels-photo-1130626.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&fit=crop",
+    verified: true,
+  },
+  {
+    id: "17",
+    campaignId: "1",
+    name: "MakeupMagic_Aria",
+    platform: "tiktok",
+    followers: 920000,
+    engagement: 6.2,
+    category: "Beauty",
+    avatar:
+      "https://images.pexels.com/photos/1542085/pexels-photo-1542085.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&fit=crop",
+    verified: true,
+  },
+  // Food creators
+  {
+    id: "18",
+    campaignId: "1",
+    name: "ChefCarlos",
+    platform: "youtube",
+    followers: 340000,
+    engagement: 3.8,
+    category: "Food",
+    avatar:
+      "https://images.pexels.com/photos/1043471/pexels-photo-1043471.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&fit=crop",
+    verified: true,
+  },
+  {
+    id: "19",
+    campaignId: "1",
+    name: "FoodieFinds_Maya",
+    platform: "instagram",
+    followers: 290000,
+    engagement: 4.4,
+    category: "Food",
+    avatar:
+      "https://images.pexels.com/photos/1391498/pexels-photo-1391498.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&fit=crop",
+    verified: false,
+  },
+  // Lifestyle influencers under 500k
+  {
+    id: "20",
+    campaignId: "1",
+    name: "EverydayElla",
+    platform: "instagram",
+    followers: 380000,
+    engagement: 4.1,
+    category: "Lifestyle",
+    avatar:
+      "https://images.pexels.com/photos/1987301/pexels-photo-1987301.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&fit=crop",
+    verified: false,
+  },
+  {
+    id: "21",
+    campaignId: "1",
+    name: "LifeWithLiam",
+    platform: "youtube",
+    followers: 420000,
+    engagement: 3.6,
+    category: "Lifestyle",
+    avatar:
+      "https://images.pexels.com/photos/1222271/pexels-photo-1222271.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&fit=crop",
+    verified: false,
+  },
 ];
 
 // Mock social posts
