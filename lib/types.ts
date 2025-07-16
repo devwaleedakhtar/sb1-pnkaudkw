@@ -3,9 +3,10 @@ export interface Campaign {
   name: string;
   client: string;
   description: string;
+  brief?: string;
   startDate: Date;
   endDate: Date;
-  status: 'active' | 'paused' | 'completed';
+  status: "active" | "paused" | "completed";
   createdAt: Date;
   updatedAt: Date;
 }
@@ -16,7 +17,7 @@ export interface MediaResult {
   title: string;
   outlet: string;
   url: string;
-  sentiment: 'positive' | 'neutral' | 'negative';
+  sentiment: "positive" | "neutral" | "negative";
   reach: number;
   publishedAt: Date;
   summary: string;
@@ -26,7 +27,7 @@ export interface Influencer {
   id: string;
   campaignId: string;
   name: string;
-  platform: 'instagram' | 'twitter' | 'tiktok' | 'youtube';
+  platform: "instagram" | "twitter" | "tiktok" | "youtube";
   followers: number;
   engagement: number;
   category: string;
@@ -38,7 +39,7 @@ export interface SocialPost {
   id: string;
   campaignId: string;
   trackerId?: string;
-  platform: 'instagram' | 'twitter' | 'tiktok' | 'youtube';
+  platform: "instagram" | "twitter" | "tiktok" | "youtube";
   content: string;
   likes: number;
   shares: number;
@@ -56,10 +57,10 @@ export interface SocialTracker {
   name: string;
   keywords: string[];
   hashtags: string[];
-  platforms: ('instagram' | 'twitter' | 'tiktok' | 'youtube')[];
+  platforms: ("instagram" | "twitter" | "tiktok" | "youtube")[];
   startDate: Date;
   endDate: Date;
-  status: 'active' | 'paused' | 'completed';
+  status: "active" | "paused" | "completed";
   createdAt: Date;
   updatedAt: Date;
   postsCount: number;
@@ -81,7 +82,7 @@ export interface DashboardStats {
 export interface Activity {
   id: string;
   campaignId: string;
-  type: 'media' | 'influencer' | 'social';
+  type: "media" | "influencer" | "social";
   title: string;
   description: string;
   timestamp: Date;

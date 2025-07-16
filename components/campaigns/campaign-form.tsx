@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+
 import {
   Loader2,
   Save,
@@ -32,6 +33,8 @@ import {
   User,
   FileText,
   Target,
+  Upload,
+  Sparkles,
 } from "lucide-react";
 
 interface CampaignFormProps {
@@ -48,6 +51,7 @@ export function CampaignForm({ campaign, onSave }: CampaignFormProps) {
     name: campaign?.name || "",
     client: campaign?.client || "",
     description: campaign?.description || "",
+    brief: campaign?.brief || "",
     startDate: campaign?.startDate?.toISOString().split("T")[0] || "",
     endDate: campaign?.endDate?.toISOString().split("T")[0] || "",
     status: campaign?.status || ("active" as const),
@@ -127,6 +131,18 @@ export function CampaignForm({ campaign, onSave }: CampaignFormProps) {
     }
   };
 
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const content = e.target?.result as string;
+      handleChange("brief", content);
+    };
+    reader.readAsText(file);
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case "active":
@@ -140,41 +156,69 @@ export function CampaignForm({ campaign, onSave }: CampaignFormProps) {
     }
   };
 
+  const sampleBrief = `Campaign Brief: Smart Home Device Launch
+
+Objective: Launch our new AI-powered home security system to tech-savvy millennials
+
+Target Audience: 
+- Age: 25-40 years old
+- Demographics: Urban professionals, homeowners, tech enthusiasts
+- Interests: Smart home technology, security, convenience
+
+Key Messages:
+- Innovation: Cutting-edge AI technology
+- Security: Advanced protection for your home
+- Ease of use: Simple setup and intuitive controls
+
+Budget: $50,000
+Timeline: 3 months (Q1 2024)
+
+Preferred Channels:
+- Social media (Instagram, YouTube, TikTok)
+- Influencer partnerships
+- Tech blogs and publications
+
+Success Metrics:
+- Brand awareness increase: 25%
+- Lead generation: 1,000 qualified leads
+- Social engagement: 50% increase
+
+Additional Notes:
+Looking for authentic reviews and product demonstrations. Focus on real-world use cases and customer testimonials.`;
+
   return (
     <div className="max-w-4xl mx-auto">
       <Card className="shadow-lg border-0 bg-white">
-        <CardHeader className="bg-gradient-to-r from-pink-50 to-purple-50 border-b">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => router.back()}
-                className="hover:bg-white/50"
-              >
-                <ArrowLeft className="h-4 w-4" />
-              </Button>
-              <div>
-                <CardTitle className="text-2xl font-bold text-gray-900">
-                  {campaign ? "Edit Campaign" : "Create New Campaign"}
-                </CardTitle>
-                <CardDescription className="text-gray-600 mt-1">
-                  {campaign
-                    ? "Update your campaign details"
-                    : "Set up a new marketing campaign with AI-powered tools"}
-                </CardDescription>
+        {campaign && (
+          <CardHeader className="bg-gradient-to-r from-pink-50 to-purple-50 border-b">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => router.back()}
+                  className="hover:bg-white/50"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                </Button>
+                <div>
+                  <CardTitle className="text-2xl font-bold text-gray-900">
+                    Edit Campaign
+                  </CardTitle>
+                  <CardDescription className="text-gray-600 mt-1">
+                    Update your campaign details
+                  </CardDescription>
+                </div>
               </div>
-            </div>
-            {campaign && (
               <Badge
                 className={`${getStatusColor(campaign.status)} font-medium`}
               >
                 {campaign.status.charAt(0).toUpperCase() +
                   campaign.status.slice(1)}
               </Badge>
-            )}
-          </div>
-        </CardHeader>
+            </div>
+          </CardHeader>
+        )}
 
         <CardContent className="p-8">
           <form onSubmit={handleSubmit} className="space-y-8">
@@ -270,6 +314,110 @@ export function CampaignForm({ campaign, onSave }: CampaignFormProps) {
                   <p className="text-sm text-red-500 flex items-center mt-1">
                     {errors.description}
                   </p>
+                )}
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* Campaign Brief Section */}
+            <div className="space-y-6">
+              <div className="flex items-center space-x-2 mb-4">
+                <Sparkles className="h-5 w-5 text-pink-500" />
+                <h3 className="text-lg font-semibold text-gray-900">
+                  Campaign Brief
+                </h3>
+                <Badge variant="secondary" className="ml-2">
+                  Optional
+                </Badge>
+              </div>
+
+              <div className="p-4 bg-gradient-to-r from-pink-50 to-purple-50 rounded-lg border border-pink-200">
+                <p className="text-sm text-gray-700 mb-3">
+                  Add a detailed campaign brief to help our AI tools generate
+                  better recommendations for influencers, content, and media
+                  opportunities.
+                </p>
+                <div className="flex items-center space-x-4">
+                  <div className="flex items-center space-x-2 text-xs text-gray-600">
+                    <Sparkles className="h-3 w-3" />
+                    <span>Powers AI recommendations</span>
+                  </div>
+                  <div className="flex items-center space-x-2 text-xs text-gray-600">
+                    <FileText className="h-3 w-3" />
+                    <span>Supports file upload</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label
+                    htmlFor="brief"
+                    className="text-sm font-medium text-gray-700"
+                  >
+                    Campaign Brief
+                  </Label>
+                  <Textarea
+                    id="brief"
+                    value={formData.brief}
+                    onChange={(e) => handleChange("brief", e.target.value)}
+                    placeholder={sampleBrief}
+                    rows={8}
+                    className="resize-none border-gray-300 focus:border-pink-500"
+                  />
+                </div>
+
+                <div className="flex items-center space-x-3">
+                  <div className="flex-1">
+                    <Label htmlFor="brief-upload" className="sr-only">
+                      Upload Brief File
+                    </Label>
+                    <Input
+                      id="brief-upload"
+                      type="file"
+                      accept=".txt,.doc,.docx,.pdf"
+                      onChange={handleFileUpload}
+                      className="hidden"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() =>
+                        document.getElementById("brief-upload")?.click()
+                      }
+                      className="w-full sm:w-auto"
+                    >
+                      <Upload className="h-4 w-4 mr-2" />
+                      Upload Brief File
+                    </Button>
+                  </div>
+
+                  {formData.brief && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => handleChange("brief", "")}
+                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                    >
+                      Clear Brief
+                    </Button>
+                  )}
+                </div>
+
+                {formData.brief && (
+                  <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                    <div className="flex items-center space-x-2 text-green-800">
+                      <Sparkles className="h-4 w-4" />
+                      <span className="text-sm font-medium">
+                        Brief added successfully!
+                      </span>
+                    </div>
+                    <p className="text-sm text-green-700 mt-1">
+                      Your campaign brief will be used to generate AI-powered
+                      recommendations across all tools.
+                    </p>
+                  </div>
                 )}
               </div>
             </div>
