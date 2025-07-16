@@ -1,4 +1,10 @@
-import { ChatMessage, MediaFilters, SavedFilter } from "./types";
+import {
+  ChatMessage,
+  MediaFilters,
+  SavedFilter,
+  InfluencerFilters,
+  SavedInfluencerFilter,
+} from "./types";
 
 export interface ChatResponse {
   message: string;
@@ -7,9 +13,17 @@ export interface ChatResponse {
   suggestions?: string[];
 }
 
+export interface InfluencerChatResponse {
+  message: string;
+  filters?: InfluencerFilters;
+  canSave?: boolean;
+  suggestions?: string[];
+}
+
 export class MockAIChat {
   private static instance: MockAIChat;
   private savedFilters: SavedFilter[] = [];
+  private savedInfluencerFilters: SavedInfluencerFilter[] = [];
 
   static getInstance(): MockAIChat {
     if (!MockAIChat.instance) {
@@ -304,6 +318,289 @@ export class MockAIChat {
     const index = this.savedFilters.findIndex((filter) => filter.id === id);
     if (index > -1) {
       this.savedFilters.splice(index, 1);
+      return true;
+    }
+    return false;
+  }
+
+  // Influencer-specific methods
+  async processInfluencerMessage(
+    message: string
+  ): Promise<InfluencerChatResponse> {
+    // Simulate AI processing delay
+    await new Promise((resolve) =>
+      setTimeout(resolve, 1000 + Math.random() * 2000)
+    );
+
+    const lowercaseMessage = message.toLowerCase();
+
+    // Handle greeting
+    if (this.isGreeting(lowercaseMessage)) {
+      return {
+        message:
+          "Hello! I'm here to help you find the perfect influencers for your campaign. You can ask me things like:\n\n• Find tech YouTubers with over 100k subscribers\n• Show me fashion influencers on Instagram with high engagement\n• Get micro-influencers in the fitness niche\n• Search for verified gaming streamers\n\nWhat type of influencers are you looking for?",
+        suggestions: [
+          "Find tech YouTubers with over 100k subscribers",
+          "Show me fashion influencers on Instagram with high engagement",
+          "Get micro-influencers in the fitness niche",
+        ],
+      };
+    }
+
+    // Handle filter generation requests
+    if (this.isInfluencerFilterRequest(lowercaseMessage)) {
+      const filters = this.generateInfluencerFilters(lowercaseMessage);
+      const description = this.generateInfluencerFilterDescription(filters);
+
+      return {
+        message: `I've created an influencer search filter based on your request:\n\n${description}\n\nWould you like me to run this search or would you like to modify anything?`,
+        filters,
+        canSave: true,
+        suggestions: [
+          "Run this search",
+          "Save this filter",
+          "Modify the follower range",
+          "Change the platform",
+        ],
+      };
+    }
+
+    // Handle save requests
+    if (this.isSaveRequest(lowercaseMessage)) {
+      return {
+        message:
+          "Great! I'll save this influencer filter for you. What would you like to name it?",
+        canSave: true,
+        suggestions: [
+          "Tech YouTubers 100K+",
+          "Fashion Instagram Influencers",
+          "Fitness Micro-Influencers",
+        ],
+      };
+    }
+
+    // Handle search execution
+    if (this.isSearchRequest(lowercaseMessage)) {
+      return {
+        message:
+          "Perfect! I'll search for influencers with these filters. You can view the results in the main grid.",
+        suggestions: [
+          "Save this filter for later",
+          "Modify the search parameters",
+          "Export the shortlist",
+        ],
+      };
+    }
+
+    // Default response with filter generation
+    const filters = this.generateInfluencerFilters(lowercaseMessage);
+    const description = this.generateInfluencerFilterDescription(filters);
+
+    return {
+      message: `Based on your request, I've set up these influencer search parameters:\n\n${description}\n\nWould you like me to run this search?`,
+      filters,
+      canSave: true,
+      suggestions: [
+        "Run this search",
+        "Save this filter",
+        "Refine the parameters",
+      ],
+    };
+  }
+
+  private isInfluencerFilterRequest(message: string): boolean {
+    const filterKeywords = [
+      "find",
+      "search",
+      "show",
+      "get",
+      "looking for",
+      "want",
+      "need",
+      "influencers",
+      "creators",
+      "youtubers",
+      "instagramers",
+      "tiktokers",
+    ];
+    return filterKeywords.some((keyword) => message.includes(keyword));
+  }
+
+  private generateInfluencerFilters(message: string): InfluencerFilters {
+    const filters: InfluencerFilters = {
+      platform: "all",
+      category: "all",
+      minFollowers: 1000,
+      maxFollowers: 10000000,
+      minEngagement: 1,
+      verified: false,
+      useInternalDb: true,
+    };
+
+    // Platform detection
+    if (message.includes("youtube") || message.includes("yt")) {
+      filters.platform = "youtube";
+    } else if (message.includes("instagram") || message.includes("ig")) {
+      filters.platform = "instagram";
+    } else if (message.includes("tiktok") || message.includes("tik tok")) {
+      filters.platform = "tiktok";
+    } else if (message.includes("twitter") || message.includes("x.com")) {
+      filters.platform = "twitter";
+    }
+
+    // Category detection
+    if (message.includes("tech") || message.includes("technology")) {
+      filters.category = "technology";
+    } else if (message.includes("fashion") || message.includes("style")) {
+      filters.category = "fashion";
+    } else if (message.includes("fitness") || message.includes("health")) {
+      filters.category = "fitness";
+    } else if (message.includes("food") || message.includes("cooking")) {
+      filters.category = "food";
+    } else if (message.includes("travel")) {
+      filters.category = "travel";
+    } else if (message.includes("beauty") || message.includes("makeup")) {
+      filters.category = "beauty";
+    } else if (message.includes("gaming") || message.includes("games")) {
+      filters.category = "gaming";
+    } else if (message.includes("lifestyle")) {
+      filters.category = "lifestyle";
+    }
+
+    // Follower range detection
+    if (message.includes("micro")) {
+      filters.minFollowers = 1000;
+      filters.maxFollowers = 100000;
+    } else if (message.includes("macro")) {
+      filters.minFollowers = 100000;
+      filters.maxFollowers = 1000000;
+    } else if (message.includes("mega")) {
+      filters.minFollowers = 1000000;
+      filters.maxFollowers = 10000000;
+    }
+
+    // Specific follower counts with "over" keyword
+    const overMatch = message.match(
+      /over\s+(\d+)k?\s*(followers|subscribers|subs)/i
+    );
+    if (overMatch) {
+      const count = parseInt(overMatch[1]);
+      const multiplier = overMatch[0].toLowerCase().includes("k") ? 1000 : 1;
+      filters.minFollowers = count * multiplier;
+    } else {
+      // General follower counts
+      const followerMatch = message.match(
+        /(\d+)k?\s*(followers|subscribers|subs)/i
+      );
+      if (followerMatch) {
+        const count = parseInt(followerMatch[1]);
+        const multiplier = followerMatch[0].toLowerCase().includes("k")
+          ? 1000
+          : 1;
+        filters.minFollowers = count * multiplier;
+      }
+    }
+
+    // Engagement detection
+    if (message.includes("high engagement")) {
+      filters.minEngagement = 3.0;
+    } else if (message.includes("good engagement")) {
+      filters.minEngagement = 2.0;
+    }
+
+    // Verification detection
+    if (message.includes("verified") || message.includes("blue check")) {
+      filters.verified = true;
+    }
+
+    // Database preference
+    if (message.includes("broad") || message.includes("external")) {
+      filters.useInternalDb = false;
+    }
+
+    return filters;
+  }
+
+  private generateInfluencerFilterDescription(
+    filters: InfluencerFilters
+  ): string {
+    const parts: string[] = [];
+
+    if (filters.platform !== "all") {
+      parts.push(
+        `📱 Platform: ${
+          filters.platform.charAt(0).toUpperCase() + filters.platform.slice(1)
+        }`
+      );
+    }
+
+    if (filters.category !== "all") {
+      parts.push(
+        `🏷️ Category: ${
+          filters.category.charAt(0).toUpperCase() + filters.category.slice(1)
+        }`
+      );
+    }
+
+    if (filters.minFollowers > 1000 || filters.maxFollowers < 10000000) {
+      const minStr =
+        filters.minFollowers >= 1000000
+          ? `${(filters.minFollowers / 1000000).toFixed(1)}M`
+          : `${(filters.minFollowers / 1000).toFixed(0)}K`;
+      const maxStr =
+        filters.maxFollowers >= 1000000
+          ? `${(filters.maxFollowers / 1000000).toFixed(1)}M`
+          : `${(filters.maxFollowers / 1000).toFixed(0)}K`;
+      parts.push(`👥 Followers: ${minStr} - ${maxStr}`);
+    }
+
+    if (filters.minEngagement > 1) {
+      parts.push(`📊 Min Engagement: ${filters.minEngagement}%`);
+    }
+
+    if (filters.verified) {
+      parts.push(`✅ Verified accounts only`);
+    }
+
+    parts.push(
+      `🔍 Search: ${
+        filters.useInternalDb ? "Internal database" : "Broad search"
+      }`
+    );
+
+    return parts.join("\n");
+  }
+
+  saveInfluencerFilter(
+    name: string,
+    description: string,
+    query: string,
+    filters: InfluencerFilters
+  ): SavedInfluencerFilter {
+    const savedFilter: SavedInfluencerFilter = {
+      id: Date.now().toString(),
+      name,
+      description,
+      query,
+      filters,
+      createdAt: new Date(),
+      resultCount: Math.floor(Math.random() * 200) + 10, // Mock result count
+    };
+
+    this.savedInfluencerFilters.push(savedFilter);
+    return savedFilter;
+  }
+
+  getSavedInfluencerFilters(): SavedInfluencerFilter[] {
+    return this.savedInfluencerFilters;
+  }
+
+  deleteSavedInfluencerFilter(id: string): boolean {
+    const index = this.savedInfluencerFilters.findIndex(
+      (filter) => filter.id === id
+    );
+    if (index > -1) {
+      this.savedInfluencerFilters.splice(index, 1);
       return true;
     }
     return false;

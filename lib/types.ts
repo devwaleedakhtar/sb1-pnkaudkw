@@ -123,3 +123,23 @@ export interface MediaFilters {
   outlets: string[];
   minReach: number;
 }
+
+export interface InfluencerFilters {
+  platform: string;
+  category: string;
+  minFollowers: number;
+  maxFollowers: number;
+  minEngagement: number;
+  verified?: boolean;
+  useInternalDb: boolean;
+}
+
+export interface SavedInfluencerFilter {
+  id: string;
+  name: string;
+  description: string;
+  query: string;
+  filters: InfluencerFilters;
+  createdAt: Date;
+  resultCount?: number;
+}

@@ -1,29 +1,55 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Influencer } from "@/lib/types";
-import { api } from "@/lib/mock-api";
-import { PageHeader } from "@/components/layout/page-header";
-import { BriefUpload } from "@/components/elevate-gpt/brief-upload";
 import {
-  InfluencerSearch,
-  SearchParams,
-} from "@/components/elevate-gpt/influencer-search";
+  Influencer,
+  InfluencerFilters,
+  SavedInfluencerFilter,
+} from "@/lib/types";
+import { api } from "@/lib/mock-api";
+import { MockAIChat } from "@/lib/mock-ai-chat";
+import { PageHeader } from "@/components/layout/page-header";
+import { ChatInterface } from "@/components/elevate-gpt/chat-interface";
+import { SavedFilters } from "@/components/elevate-gpt/saved-filters";
 import { InfluencerGrid } from "@/components/elevate-gpt/influencer-grid";
-import { Button } from "@/components/ui/button";
+import { FilterBuildingPreview } from "@/components/elevate-gpt/filter-building-preview";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { RefreshCw, Sparkles, TrendingUp, Users, Zap } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  MessageCircle,
+  Bookmark,
+  Search,
+  Sparkles,
+  RefreshCw,
+  Users,
+  TrendingUp,
+  Zap,
+  Database,
+  Grid3X3,
+  List,
+} from "lucide-react";
 
 export default function ElevateGPT() {
   const [influencers, setInfluencers] = useState<Influencer[]>([]);
-  const [filteredInfluencers, setFilteredInfluencers] = useState<Influencer[]>(
-    []
-  );
   const [loading, setLoading] = useState(true);
   const [searching, setSearching] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
-  const [lastSearchQuery, setLastSearchQuery] = useState("");
+  const [currentQuery, setCurrentQuery] = useState("");
+  const [currentFilters, setCurrentFilters] = useState<InfluencerFilters>({
+    platform: "all",
+    category: "all",
+    minFollowers: 1000,
+    maxFollowers: 10000000,
+    minEngagement: 1,
+    verified: false,
+    useInternalDb: true,
+  });
+  const [savedFilters, setSavedFilters] = useState<SavedInfluencerFilter[]>([]);
+  const [hasActiveSearch, setHasActiveSearch] = useState(false);
+  const [activeTab, setActiveTab] = useState("chat");
+  const [isBuilding, setIsBuilding] = useState(false);
+  const [lastMessage, setLastMessage] = useState("");
   const [searchStats, setSearchStats] = useState({
     totalResults: 0,
     averageEngagement: 0,
@@ -31,23 +57,20 @@ export default function ElevateGPT() {
     verifiedCount: 0,
   });
 
+  const aiChat = MockAIChat.getInstance();
+
   useEffect(() => {
-    loadInfluencers();
+    loadInitialData();
   }, []);
 
-  useEffect(() => {
-    setFilteredInfluencers(influencers);
-    updateSearchStats(influencers);
-  }, [influencers]);
-
-  const loadInfluencers = async () => {
+  const loadInitialData = async () => {
     try {
       setLoading(true);
-      // For demo purposes, using campaign ID '1'
-      const data = await api.getInfluencers("1");
-      setInfluencers(data);
+      // Load saved filters only, no default influencers
+      const filters = aiChat.getSavedInfluencerFilters();
+      setSavedFilters(filters);
     } catch (error) {
-      console.error("Error loading influencers:", error);
+      console.error("Error loading initial data:", error);
     } finally {
       setLoading(false);
     }
@@ -86,34 +109,80 @@ export default function ElevateGPT() {
     });
   };
 
-  const handleGenerateQueries = (brief: string, queries: string[]) => {
-    console.log("Generated queries from brief:", brief, queries);
-    // In a real app, this would use AI to generate search queries
+  const handleFiltersGenerated = (
+    filters: InfluencerFilters,
+    query: string
+  ) => {
+    setCurrentFilters(filters);
+    setCurrentQuery(query);
+    setLastMessage(query);
+    setIsBuilding(true);
+
+    // Stop building after a delay
+    setTimeout(() => {
+      setIsBuilding(false);
+    }, 4000);
   };
 
-  const handleSearchFromBrief = (query: string) => {
-    setLastSearchQuery(query);
-    // This would trigger the AI search component
-    // For now, we'll just log it
-    console.log("Searching from brief:", query);
-  };
-
-  const handleSearch = async (params: SearchParams) => {
-    console.log("handleSearch called with params:", params);
+  const handleRunSearch = async (filters: InfluencerFilters, query: string) => {
     setSearching(true);
-    setLastSearchQuery(params.query);
+    setCurrentFilters(filters);
+    setCurrentQuery(query);
+    setHasActiveSearch(true);
 
     try {
-      // Use the new search API
-      const results = await api.searchInfluencers("1", params);
-      console.log("Search results:", results);
-      setFilteredInfluencers(results);
-      updateSearchStats(results);
+      // Convert InfluencerFilters to SearchParams for API compatibility
+      const searchParams = {
+        query,
+        platform: filters.platform,
+        category: filters.category,
+        minFollowers: filters.minFollowers,
+        maxFollowers: filters.maxFollowers,
+        minEngagement: filters.minEngagement,
+        useInternalDb: filters.useInternalDb,
+      };
+
+      const data = await api.searchInfluencers("all", searchParams);
+      setInfluencers(data);
+      updateSearchStats(data);
     } catch (error) {
-      console.error("Error searching influencers:", error);
+      console.error("Error running search:", error);
     } finally {
       setSearching(false);
     }
+  };
+
+  const handleSaveFilter = (
+    name: string,
+    description: string,
+    query: string,
+    filters: InfluencerFilters
+  ) => {
+    const savedFilter = aiChat.saveInfluencerFilter(
+      name,
+      description,
+      query,
+      filters
+    );
+    setSavedFilters((prev) => [...prev, savedFilter]);
+  };
+
+  const handleRunSavedFilter = (filter: SavedInfluencerFilter) => {
+    handleRunSearch(filter.filters, filter.query);
+  };
+
+  const handleDeleteSavedFilter = (id: string) => {
+    const success = aiChat.deleteSavedInfluencerFilter(id);
+    if (success) {
+      setSavedFilters((prev) => prev.filter((f) => f.id !== id));
+    }
+  };
+
+  const handleRefreshResults = async () => {
+    if (hasActiveSearch) {
+      await handleRunSearch(currentFilters, currentQuery);
+    }
+    // No refresh action if no active search
   };
 
   const handleExportShortlist = (shortlisted: Influencer[]) => {
@@ -148,17 +217,16 @@ export default function ElevateGPT() {
     document.body.removeChild(a);
   };
 
-  const handleRefresh = async () => {
-    setRefreshing(true);
-    try {
-      await loadInfluencers();
-    } finally {
-      setRefreshing(false);
-    }
+  const getResultsTitle = () => {
+    return `Search Results: "${currentQuery}"`;
+  };
+
+  const getResultsDescription = () => {
+    return `${influencers.length} influencers found with active filters`;
   };
 
   return (
-    <div className="max-w-7xl mx-auto">
+    <div className="space-y-6">
       <PageHeader
         title="ElevateGPT"
         description="AI-powered influencer discovery and analysis platform"
@@ -172,111 +240,159 @@ export default function ElevateGPT() {
             AI-Powered
           </Badge>
           <Button
-            onClick={handleRefresh}
-            disabled={refreshing}
+            onClick={handleRefreshResults}
+            disabled={searching}
             variant="outline"
           >
             <RefreshCw
-              className={`h-4 w-4 mr-2 ${refreshing ? "animate-spin" : ""}`}
+              className={`h-4 w-4 mr-2 ${searching ? "animate-spin" : ""}`}
             />
             Refresh
           </Button>
         </div>
       </PageHeader>
 
-      {/* Search Statistics */}
-      {searchStats.totalResults > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center space-x-2">
-                <Users className="h-5 w-5 text-blue-500" />
-                <div>
-                  <div className="text-2xl font-bold">
-                    {searchStats.totalResults}
-                  </div>
-                  <div className="text-sm text-gray-600">Total Results</div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+      {/* Top Section - Chat and Filter Builder */}
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        {/* Chat & Saved Filters - 75% width */}
+        <div className="lg:col-span-3">
+          <Tabs
+            value={activeTab}
+            onValueChange={setActiveTab}
+            className="h-full"
+          >
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="chat" className="flex items-center gap-2">
+                <MessageCircle className="h-4 w-4" />
+                AI Chat
+              </TabsTrigger>
+              <TabsTrigger value="saved" className="flex items-center gap-2">
+                <Bookmark className="h-4 w-4" />
+                Saved
+                {savedFilters.length > 0 && (
+                  <Badge variant="secondary" className="ml-1">
+                    {savedFilters.length}
+                  </Badge>
+                )}
+              </TabsTrigger>
+            </TabsList>
 
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center space-x-2">
-                <TrendingUp className="h-5 w-5 text-green-500" />
-                <div>
-                  <div className="text-2xl font-bold">
-                    {searchStats.averageEngagement}%
-                  </div>
-                  <div className="text-sm text-gray-600">Avg Engagement</div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+            <TabsContent value="chat" className="h-full mt-4">
+              <ChatInterface
+                onFiltersGenerated={handleFiltersGenerated}
+                onSaveFilter={handleSaveFilter}
+                onRunSearch={handleRunSearch}
+              />
+            </TabsContent>
 
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center space-x-2">
-                <Zap className="h-5 w-5 text-purple-500" />
-                <div>
-                  <div className="text-2xl font-bold capitalize">
-                    {searchStats.topPlatform}
-                  </div>
-                  <div className="text-sm text-gray-600">Top Platform</div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+            <TabsContent value="saved" className="h-full mt-4">
+              <SavedFilters
+                savedFilters={savedFilters}
+                onRunFilter={handleRunSavedFilter}
+                onDeleteFilter={handleDeleteSavedFilter}
+              />
+            </TabsContent>
+          </Tabs>
+        </div>
 
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center space-x-2">
-                <div className="flex items-center justify-center w-10 h-10 bg-blue-100 rounded-full">
-                  <div className="text-2xl font-bold text-blue-600">
-                    {searchStats.verifiedCount}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-sm text-gray-600">Verified Accounts</div>
-                </div>
+        {/* Filter Builder - 25% width */}
+        <div className="lg:col-span-1">
+          <FilterBuildingPreview
+            currentFilters={currentFilters}
+            isBuilding={isBuilding}
+            lastMessage={lastMessage}
+          />
+        </div>
+      </div>
+
+      {/* Results Section - Only show when there's an active search */}
+      {hasActiveSearch && (
+        <div className="bg-white rounded-lg border">
+          <div className="p-6 border-b">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-semibold flex items-center gap-2">
+                  <Database className="h-5 w-5" />
+                  {getResultsTitle()}
+                </h2>
+                <p className="text-sm text-gray-600 mt-1">
+                  {getResultsDescription()}
+                </p>
               </div>
-            </CardContent>
-          </Card>
+              <div className="flex items-center gap-2">
+                <Badge variant="outline" className="flex items-center gap-1">
+                  <Search className="h-3 w-3" />
+                  Active Search
+                </Badge>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleRefreshResults}
+                  disabled={searching}
+                >
+                  <RefreshCw
+                    className={`h-4 w-4 ${searching ? "animate-spin" : ""}`}
+                  />
+                </Button>
+              </div>
+            </div>
+
+            {/* Active Filters Display */}
+            <div className="mt-4 p-3 bg-purple-50 rounded-lg">
+              <div className="text-sm font-medium text-purple-900 mb-2">
+                Active Filters:
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {currentFilters.platform !== "all" && (
+                  <Badge variant="outline" className="text-xs capitalize">
+                    {currentFilters.platform}
+                  </Badge>
+                )}
+                {currentFilters.category !== "all" && (
+                  <Badge variant="outline" className="text-xs capitalize">
+                    {currentFilters.category}
+                  </Badge>
+                )}
+                {(currentFilters.minFollowers > 1000 ||
+                  currentFilters.maxFollowers < 10000000) && (
+                  <Badge variant="outline" className="text-xs">
+                    {currentFilters.minFollowers >= 1000000
+                      ? `${(currentFilters.minFollowers / 1000000).toFixed(1)}M`
+                      : `${(currentFilters.minFollowers / 1000).toFixed(0)}K`}
+                    {" - "}
+                    {currentFilters.maxFollowers >= 1000000
+                      ? `${(currentFilters.maxFollowers / 1000000).toFixed(1)}M`
+                      : `${(currentFilters.maxFollowers / 1000).toFixed(0)}K`}
+                    {" followers"}
+                  </Badge>
+                )}
+                {currentFilters.minEngagement > 1 && (
+                  <Badge variant="outline" className="text-xs">
+                    {currentFilters.minEngagement}%+ engagement
+                  </Badge>
+                )}
+                {currentFilters.verified && (
+                  <Badge variant="outline" className="text-xs">
+                    Verified only
+                  </Badge>
+                )}
+                <Badge variant="outline" className="text-xs">
+                  {currentFilters.useInternalDb
+                    ? "Internal DB"
+                    : "Broad Search"}
+                </Badge>
+              </div>
+            </div>
+          </div>
+          <div className="p-6">
+            <InfluencerGrid
+              influencers={influencers}
+              loading={loading || searching}
+              onExportShortlist={handleExportShortlist}
+            />
+          </div>
         </div>
       )}
-
-      {/* Last Search Query */}
-      {lastSearchQuery && (
-        <Card className="mb-6 bg-gradient-to-r from-pink-50 to-purple-50 border-pink-200">
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-2">
-              <Sparkles className="h-4 w-4 text-pink-500" />
-              <span className="text-sm text-gray-700">Last search:</span>
-              <Badge
-                variant="outline"
-                className="bg-white border-pink-200 text-pink-800"
-              >
-                {lastSearchQuery}
-              </Badge>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      <BriefUpload
-        onGenerateQueries={handleGenerateQueries}
-        onSearchQuery={handleSearchFromBrief}
-        loading={searching}
-      />
-
-      <InfluencerSearch onSearch={handleSearch} loading={searching} />
-
-      <InfluencerGrid
-        influencers={filteredInfluencers}
-        loading={loading || searching}
-        onExportShortlist={handleExportShortlist}
-      />
     </div>
   );
 }
