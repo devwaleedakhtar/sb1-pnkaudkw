@@ -5,9 +5,9 @@ import {
   SocialPost,
   Activity,
   DashboardStats,
+  MediaFilters,
 } from "./types";
 import type { SocialTracker } from "./types";
-import { MediaFilters } from "@/components/publicity-gpt/filter-sidebar";
 import {
   mockCampaigns,
   mockMediaResults,
@@ -24,27 +24,52 @@ const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 const getExampleQueryResults = (query: string): string[] => {
   const lowerQuery = query.toLowerCase();
 
-  if (lowerQuery.includes("positive techcrunch articles from last week")) {
-    // Return IDs of positive TechCrunch articles from recent dates
-    return ["1", "3", "20"];
+  if (lowerQuery.includes("positive") && lowerQuery.includes("coverage")) {
+    // Return IDs of positive articles
+    return ["1", "3", "5", "7", "9", "11", "13", "15", "17", "19"];
   }
 
-  if (lowerQuery.includes("negative mentions with high reach")) {
-    // Return IDs of negative articles with high reach
-    return ["2", "6", "14", "16", "18", "24"];
+  if (
+    lowerQuery.includes("negative mentions") ||
+    lowerQuery.includes("negative coverage")
+  ) {
+    // Return IDs of negative articles
+    return ["2", "4", "6", "8", "10", "12", "14", "16", "18", "20"];
   }
 
-  if (lowerQuery.includes("podcast mentions from this month")) {
-    // Return IDs of podcast articles
-    return ["25", "26"];
+  if (lowerQuery.includes("product launch") || lowerQuery.includes("launch")) {
+    // Return IDs related to product launches
+    return ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"];
   }
 
-  if (lowerQuery.includes("social media posts about our product")) {
-    // Return IDs that might be social media related (none in our current data, so return empty)
-    return [];
+  if (lowerQuery.includes("social media") || lowerQuery.includes("social")) {
+    // Return IDs for social media content
+    return ["11", "12", "13", "14", "15", "16", "17", "18", "19", "20"];
   }
 
-  return [];
+  if (lowerQuery.includes("high reach") || lowerQuery.includes("popular")) {
+    // Return IDs of high reach articles
+    return ["1", "5", "9", "13", "17", "21", "25"];
+  }
+
+  // For any other query, return a general set of results
+  return [
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+  ];
 };
 
 export const api = {

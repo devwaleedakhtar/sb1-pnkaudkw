@@ -129,7 +129,7 @@ export class MockAIChat {
       minReach: 0,
     };
 
-    // Date range detection
+    // Date range detection - always add a date range for more comprehensive filters
     if (message.includes("last week") || message.includes("past week")) {
       const date = new Date();
       date.setDate(date.getDate() - 7);
@@ -144,9 +144,14 @@ export class MockAIChat {
     } else if (message.includes("today") || message.includes("recent")) {
       const date = new Date();
       filters.dateRange.start = date.toISOString().split("T")[0];
+    } else {
+      // Default to last 30 days for more comprehensive filtering
+      const date = new Date();
+      date.setDate(date.getDate() - 30);
+      filters.dateRange.start = date.toISOString().split("T")[0];
     }
 
-    // Media types detection
+    // Media types detection - add multiple types for richer filters
     if (message.includes("social media") || message.includes("social")) {
       filters.mediaTypes.push("Social Media");
     }
@@ -164,6 +169,11 @@ export class MockAIChat {
     }
     if (message.includes("blog")) {
       filters.mediaTypes.push("Blog");
+    }
+
+    // Add default media types if none specified to make filters more comprehensive
+    if (filters.mediaTypes.length === 0) {
+      filters.mediaTypes.push("Online News", "Social Media", "Blog");
     }
 
     // Sentiment detection
@@ -211,6 +221,25 @@ export class MockAIChat {
     }
     if (message.includes("bloomberg")) {
       filters.outlets.push("Bloomberg");
+    }
+    if (message.includes("wired")) {
+      filters.outlets.push("Wired");
+    }
+    if (message.includes("verge")) {
+      filters.outlets.push("The Verge");
+    }
+    if (message.includes("cnn")) {
+      filters.outlets.push("CNN");
+    }
+
+    // Add some default outlets for more comprehensive filtering
+    if (
+      filters.outlets.length === 0 &&
+      (message.includes("tech") ||
+        message.includes("product") ||
+        message.includes("launch"))
+    ) {
+      filters.outlets.push("TechCrunch", "Wired");
     }
 
     return filters;
