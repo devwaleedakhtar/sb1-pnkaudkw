@@ -1,29 +1,33 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { MediaResult } from "@/lib/types";
+import { MediaResult, SavedFilter, MediaFilters } from "@/lib/types";
 import { api } from "@/lib/mock-api";
-import { AIQueryProcessor } from "@/lib/ai-query-processor";
+import { MockAIChat } from "@/lib/mock-ai-chat";
 import { PageHeader } from "@/components/layout/page-header";
-import { SearchBar } from "@/components/publicity-gpt/search-bar";
-import {
-  FilterSidebar,
-  MediaFilters,
-} from "@/components/publicity-gpt/filter-sidebar";
-import { ResultsTable } from "@/components/publicity-gpt/results-table";
-import { RefreshCw, Sparkles } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { ChatInterface } from "@/components/publicity-gpt/chat-interface";
+import { SavedFilters } from "@/components/publicity-gpt/saved-filters";
+import { ResultsDisplay } from "@/components/publicity-gpt/results-display";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  MessageCircle,
+  Bookmark,
+  Search,
+  Sparkles,
+  RefreshCw,
+  Database,
+  Grid3X3,
+  List,
+} from "lucide-react";
 
 export default function PublicityGPT() {
   const [mediaResults, setMediaResults] = useState<MediaResult[]>([]);
-  const [filteredResults, setFilteredResults] = useState<MediaResult[]>([]);
   const [loading, setLoading] = useState(true);
   const [searching, setSearching] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
   const [currentQuery, setCurrentQuery] = useState("");
-  const [currentOriginalQuery, setCurrentOriginalQuery] = useState("");
   const [currentFilters, setCurrentFilters] = useState<MediaFilters>({
     dateRange: { start: "", end: "" },
     mediaTypes: [],
@@ -31,244 +35,257 @@ export default function PublicityGPT() {
     outlets: [],
     minReach: 0,
   });
-  const [hasSearched, setHasSearched] = useState(false);
+  const [savedFilters, setSavedFilters] = useState<SavedFilter[]>([]);
+  const [hasActiveSearch, setHasActiveSearch] = useState(false);
+  const [activeTab, setActiveTab] = useState("chat");
+  const [viewMode, setViewMode] = useState<"table" | "grid">("table");
 
-  const aiProcessor = new AIQueryProcessor();
+  const aiChat = MockAIChat.getInstance();
 
   useEffect(() => {
-    loadMediaResults();
+    loadInitialData();
   }, []);
 
-  const loadMediaResults = async () => {
+  const loadInitialData = async () => {
     try {
       setLoading(true);
-      // For demo purposes, using campaign ID '1'
+      // Load default media results
       const data = await api.getMediaResults("1");
       setMediaResults(data);
-      if (!hasSearched) {
-        setFilteredResults(data);
-      }
+
+      // Load saved filters
+      const filters = aiChat.getSavedFilters();
+      setSavedFilters(filters);
     } catch (error) {
-      console.error("Error loading media results:", error);
+      console.error("Error loading initial data:", error);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSearch = async (query: string, originalQuery?: string) => {
-    setSearching(true);
+  const handleFiltersGenerated = (filters: MediaFilters, query: string) => {
+    setCurrentFilters(filters);
     setCurrentQuery(query);
-    setCurrentOriginalQuery(originalQuery || query);
-    setHasSearched(true);
+  };
+
+  const handleRunSearch = async (filters: MediaFilters, query: string) => {
+    setSearching(true);
+    setCurrentFilters(filters);
+    setCurrentQuery(query);
+    setHasActiveSearch(true);
 
     try {
-      // Use the enhanced API with search query, filters, and original query
-      const data = await api.getMediaResults(
-        "1",
-        currentFilters,
-        query,
-        originalQuery
-      );
-      setFilteredResults(data);
+      const data = await api.getMediaResults("1", filters, query);
+      setMediaResults(data);
+      setActiveTab("results");
     } catch (error) {
-      console.error("Error searching:", error);
+      console.error("Error running search:", error);
     } finally {
       setSearching(false);
     }
   };
 
-  const handleFiltersChange = async (filters: MediaFilters) => {
-    setCurrentFilters(filters);
+  const handleSaveFilter = (
+    name: string,
+    description: string,
+    query: string,
+    filters: MediaFilters
+  ) => {
+    const savedFilter = aiChat.saveFilter(name, description, query, filters);
+    setSavedFilters((prev) => [...prev, savedFilter]);
+  };
 
-    // If we have a search query or filters applied, re-search with new filters
-    if (hasSearched || currentQuery) {
-      setSearching(true);
-      try {
-        const data = await api.getMediaResults(
-          "1",
-          filters,
-          currentQuery,
-          currentOriginalQuery
-        );
-        setFilteredResults(data);
-      } catch (error) {
-        console.error("Error applying filters:", error);
-      } finally {
-        setSearching(false);
-      }
+  const handleRunSavedFilter = (filter: SavedFilter) => {
+    handleRunSearch(filter.filters, filter.query);
+  };
+
+  const handleDeleteSavedFilter = (id: string) => {
+    const success = aiChat.deleteSavedFilter(id);
+    if (success) {
+      setSavedFilters((prev) => prev.filter((f) => f.id !== id));
     }
   };
 
-  const handleClearFilters = async () => {
-    const clearedFilters: MediaFilters = {
-      dateRange: { start: "", end: "" },
-      mediaTypes: [],
-      sentiment: [],
-      outlets: [],
-      minReach: 0,
-    };
-    setCurrentFilters(clearedFilters);
-
-    // If we have a search query, re-search with cleared filters
-    if (hasSearched && currentQuery) {
-      setSearching(true);
-      try {
-        const data = await api.getMediaResults(
-          "1",
-          clearedFilters,
-          currentQuery,
-          currentOriginalQuery
-        );
-        setFilteredResults(data);
-      } catch (error) {
-        console.error("Error clearing filters:", error);
-      } finally {
-        setSearching(false);
-      }
+  const handleRefreshResults = async () => {
+    if (hasActiveSearch) {
+      await handleRunSearch(currentFilters, currentQuery);
     } else {
-      // If no search query, show original data and reset search state
-      setFilteredResults(mediaResults);
-      setHasSearched(false);
-      setCurrentQuery("");
-      setCurrentOriginalQuery("");
+      await loadInitialData();
     }
   };
 
-  const handleSaveSearch = (query: string) => {
-    // Simulate saving search
-    console.log("Saving search:", query);
-    // In a real app, this would save to backend
-  };
-
-  const handleClearSearch = () => {
-    // Reset search state and show original data
-    setCurrentQuery("");
-    setCurrentOriginalQuery("");
-    setHasSearched(false);
-    setFilteredResults(mediaResults);
-
-    // Also clear filters
-    const clearedFilters: MediaFilters = {
-      dateRange: { start: "", end: "" },
-      mediaTypes: [],
-      sentiment: [],
-      outlets: [],
-      minReach: 0,
-    };
-    setCurrentFilters(clearedFilters);
-  };
-
-  const handleExport = () => {
-    // Simulate export functionality
-    console.log("Exporting results:", filteredResults);
-    // In a real app, this would generate CSV/Excel file
-  };
-
-  const handleRefresh = async () => {
-    setRefreshing(true);
-    try {
-      await loadMediaResults();
-      // If we have active search/filters, re-apply them
-      if (hasSearched || currentQuery) {
-        const data = await api.getMediaResults(
-          "1",
-          currentFilters,
-          currentQuery,
-          currentOriginalQuery
-        );
-        setFilteredResults(data);
-      }
-    } finally {
-      setRefreshing(false);
+  const getResultsTitle = () => {
+    if (hasActiveSearch) {
+      return `Search Results: "${currentQuery}"`;
     }
+    return "All Media Coverage";
   };
 
-  const getActiveFilterCount = () => {
-    let count = 0;
-    if (currentFilters.dateRange.start || currentFilters.dateRange.end) count++;
-    if (currentFilters.mediaTypes.length > 0) count++;
-    if (currentFilters.sentiment.length > 0) count++;
-    if (currentFilters.outlets.length > 0) count++;
-    if (currentFilters.minReach > 0) count++;
-    return count;
+  const getResultsDescription = () => {
+    if (hasActiveSearch) {
+      const filterCount = Object.values(currentFilters)
+        .flat()
+        .filter(Boolean).length;
+      return `${mediaResults.length} results found with ${filterCount} active filters`;
+    }
+    return `${mediaResults.length} total media mentions`;
   };
-
-  const activeFilterCount = getActiveFilterCount();
 
   return (
-    <div className="max-w-7xl mx-auto">
+    <div className="space-y-6">
       <PageHeader
         title="PublicityGPT"
-        description="AI-powered media monitoring and sentiment analysis"
-      >
-        <div className="flex items-center gap-3">
-          {activeFilterCount > 0 && (
-            <Badge variant="secondary" className="bg-pink-100 text-pink-800">
-              {activeFilterCount} filter{activeFilterCount > 1 ? "s" : ""}{" "}
-              active
-            </Badge>
-          )}
-          {hasSearched && (
-            <Badge variant="outline" className="bg-blue-50 text-blue-700">
-              {filteredResults.length} results found
-            </Badge>
-          )}
-          <Button
-            onClick={handleRefresh}
-            disabled={refreshing}
-            variant="outline"
-          >
-            <RefreshCw
-              className={`h-4 w-4 mr-2 ${refreshing ? "animate-spin" : ""}`}
-            />
-            Refresh
-          </Button>
-        </div>
-      </PageHeader>
-
-      <SearchBar
-        onSearch={handleSearch}
-        onSaveSearch={handleSaveSearch}
-        onExport={handleExport}
-        onFiltersChange={handleFiltersChange}
-        onClearSearch={handleClearSearch}
-        loading={searching}
+        description="AI-powered media monitoring and analysis"
       />
 
-      {/* AI Features Banner */}
-      <Card className="mb-6 bg-gradient-to-r from-pink-50 to-purple-50 border-pink-200">
-        <CardContent className="p-4">
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2">
-              <Sparkles className="h-5 w-5 text-pink-500" />
-              <span className="font-medium text-pink-700">
-                AI-Powered Search
-              </span>
-            </div>
-            <div className="text-sm text-pink-600">
-              Use natural language to find exactly what you're looking for
-            </div>
-          </div>
-          {hasSearched && currentQuery && (
-            <div className="mt-2 text-sm text-pink-600">
-              <span className="font-medium">Current search:</span> "
-              {currentQuery}"
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left Panel - Chat & Saved Filters */}
+        <div className="lg:col-span-1">
+          <Tabs
+            value={activeTab}
+            onValueChange={setActiveTab}
+            className="h-full"
+          >
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="chat" className="flex items-center gap-2">
+                <MessageCircle className="h-4 w-4" />
+                AI Chat
+              </TabsTrigger>
+              <TabsTrigger value="saved" className="flex items-center gap-2">
+                <Bookmark className="h-4 w-4" />
+                Saved
+                {savedFilters.length > 0 && (
+                  <Badge variant="secondary" className="ml-1">
+                    {savedFilters.length}
+                  </Badge>
+                )}
+              </TabsTrigger>
+            </TabsList>
 
-      <div className="flex gap-6">
-        <FilterSidebar
-          onFiltersChange={handleFiltersChange}
-          onClearFilters={handleClearFilters}
-        />
+            <TabsContent value="chat" className="h-full mt-4">
+              <ChatInterface
+                onFiltersGenerated={handleFiltersGenerated}
+                onSaveFilter={handleSaveFilter}
+                onRunSearch={handleRunSearch}
+              />
+            </TabsContent>
 
-        <div className="flex-1">
-          <ResultsTable
-            results={filteredResults}
-            loading={loading || searching}
-          />
+            <TabsContent value="saved" className="h-full mt-4">
+              <SavedFilters
+                savedFilters={savedFilters}
+                onRunFilter={handleRunSavedFilter}
+                onDeleteFilter={handleDeleteSavedFilter}
+              />
+            </TabsContent>
+          </Tabs>
+        </div>
+
+        {/* Right Panel - Results */}
+        <div className="lg:col-span-2">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <Database className="h-5 w-5" />
+                    {getResultsTitle()}
+                  </CardTitle>
+                  <p className="text-sm text-gray-600 mt-1">
+                    {getResultsDescription()}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  {hasActiveSearch && (
+                    <Badge
+                      variant="outline"
+                      className="flex items-center gap-1"
+                    >
+                      <Search className="h-3 w-3" />
+                      Active Search
+                    </Badge>
+                  )}
+                  <div className="flex items-center gap-1">
+                    <Button
+                      variant={viewMode === "table" ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setViewMode("table")}
+                    >
+                      <List className="h-4 w-4 mr-1" />
+                      Table
+                    </Button>
+                    <Button
+                      variant={viewMode === "grid" ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setViewMode("grid")}
+                    >
+                      <Grid3X3 className="h-4 w-4 mr-1" />
+                      Grid
+                    </Button>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleRefreshResults}
+                    disabled={searching}
+                  >
+                    <RefreshCw
+                      className={`h-4 w-4 ${searching ? "animate-spin" : ""}`}
+                    />
+                  </Button>
+                </div>
+              </div>
+
+              {/* Active Filters Display */}
+              {hasActiveSearch && (
+                <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+                  <div className="text-sm font-medium text-blue-900 mb-2">
+                    Active Filters:
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {currentFilters.dateRange.start && (
+                      <Badge variant="outline" className="text-xs">
+                        From{" "}
+                        {new Date(
+                          currentFilters.dateRange.start
+                        ).toLocaleDateString()}
+                      </Badge>
+                    )}
+                    {currentFilters.mediaTypes.map((type) => (
+                      <Badge key={type} variant="outline" className="text-xs">
+                        {type}
+                      </Badge>
+                    ))}
+                    {currentFilters.sentiment.map((sentiment) => (
+                      <Badge
+                        key={sentiment}
+                        variant="outline"
+                        className="text-xs"
+                      >
+                        {sentiment}
+                      </Badge>
+                    ))}
+                    {currentFilters.outlets.map((outlet) => (
+                      <Badge key={outlet} variant="outline" className="text-xs">
+                        {outlet}
+                      </Badge>
+                    ))}
+                    {currentFilters.minReach > 0 && (
+                      <Badge variant="outline" className="text-xs">
+                        Min reach: {currentFilters.minReach.toLocaleString()}
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+              )}
+            </CardHeader>
+            <CardContent className="p-0">
+              <ResultsDisplay
+                results={mediaResults}
+                loading={loading || searching}
+                viewMode={viewMode}
+              />
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>

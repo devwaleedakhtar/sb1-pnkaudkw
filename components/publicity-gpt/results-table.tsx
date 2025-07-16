@@ -35,17 +35,32 @@ import {
   Minus,
   ChevronLeft,
   ChevronRight,
+  Grid3X3,
+  List,
 } from "lucide-react";
+import { getMediaIcon, getOutletIcon } from "./media-icons";
 import { formatDistanceToNow, format } from "date-fns";
 
 interface ResultsTableProps {
   results: MediaResult[];
   loading?: boolean;
+  onPaginationChange?: (pagination: {
+    currentPage: number;
+    totalPages: number;
+    startIndex: number;
+    endIndex: number;
+    totalResults: number;
+    handlePageChange: (page: number) => void;
+  }) => void;
 }
 
-const ITEMS_PER_PAGE = 10;
+const ITEMS_PER_PAGE = 5;
 
-export function ResultsTable({ results, loading }: ResultsTableProps) {
+export function ResultsTable({
+  results,
+  loading,
+  onPaginationChange,
+}: ResultsTableProps) {
   const [currentPage, setCurrentPage] = useState(1);
 
   const totalPages = Math.ceil(results.length / ITEMS_PER_PAGE);
@@ -114,12 +129,33 @@ export function ResultsTable({ results, loading }: ResultsTableProps) {
     setCurrentPage(page);
   };
 
-  const totalReach = results.reduce((sum, r) => sum + r.reach, 0);
-
   // Reset to page 1 when results change
   useEffect(() => {
     setCurrentPage(1);
   }, [results]);
+
+  // Notify parent about pagination state
+  useEffect(() => {
+    if (onPaginationChange) {
+      onPaginationChange({
+        currentPage,
+        totalPages,
+        startIndex,
+        endIndex,
+        totalResults: results.length,
+        handlePageChange,
+      });
+    }
+  }, [
+    currentPage,
+    totalPages,
+    startIndex,
+    endIndex,
+    results.length,
+    onPaginationChange,
+  ]);
+
+  const totalReach = results.reduce((sum, r) => sum + r.reach, 0);
 
   if (loading) {
     return (
@@ -146,49 +182,27 @@ export function ResultsTable({ results, loading }: ResultsTableProps) {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2">
-            <Building className="h-5 w-5" />
-            <span>Search Results</span>
-            <Badge variant="secondary" className="ml-2">
-              {results.length}
-            </Badge>
-          </CardTitle>
-          {results.length > 0 && (
-            <div className="flex items-center gap-4 text-sm text-gray-600">
-              <div className="flex items-center gap-1">
-                <TrendingUp className="h-4 w-4" />
-                <span>Total Reach: </span>
-                <span className={`font-semibold ${getReachColor(totalReach)}`}>
-                  {formatReach(totalReach)}
-                </span>
-              </div>
-            </div>
-          )}
-        </div>
-      </CardHeader>
-      <CardContent>
-        {results.length === 0 ? (
-          <div className="text-center py-12">
-            <div className="mx-auto w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-              <Building className="h-8 w-8 text-gray-400" />
-            </div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
-              No results found
-            </h3>
-            <p className="text-gray-500 mb-4">
-              Try adjusting your search terms or filters
-            </p>
-            <div className="flex justify-center gap-2">
-              <Badge variant="outline">💡 Try "positive news"</Badge>
-              <Badge variant="outline">📅 Expand date range</Badge>
-              <Badge variant="outline">🔍 Use broader keywords</Badge>
-            </div>
+    <div>
+      {results.length === 0 ? (
+        <div className="text-center py-12">
+          <div className="mx-auto w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+            <Building className="h-8 w-8 text-gray-400" />
           </div>
-        ) : (
-          <>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">
+            No results found
+          </h3>
+          <p className="text-gray-500 mb-4">
+            Try adjusting your search terms or filters
+          </p>
+          <div className="flex justify-center gap-2">
+            <Badge variant="outline">💡 Try "positive news"</Badge>
+            <Badge variant="outline">📅 Expand date range</Badge>
+            <Badge variant="outline">🔍 Use broader keywords</Badge>
+          </div>
+        </div>
+      ) : (
+        <>
+          <div className="overflow-auto max-h-[500px]">
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
@@ -220,13 +234,16 @@ export function ResultsTable({ results, loading }: ResultsTableProps) {
                       <TableCell className="py-4">
                         <div className="flex items-center gap-2">
                           <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
-                            <Building className="h-4 w-4 text-gray-500" />
+                            {getMediaIcon(result.mediaType, result.outlet)}
                           </div>
                           <div>
-                            <div className="font-medium text-sm">
+                            <div className="font-medium text-sm flex items-center gap-1">
+                              {getOutletIcon(result.outlet)}
                               {result.outlet}
                             </div>
-                            <div className="text-xs text-gray-500">Media</div>
+                            <div className="text-xs text-gray-500">
+                              {result.mediaType}
+                            </div>
                           </div>
                         </div>
                       </TableCell>
@@ -332,89 +349,9 @@ export function ResultsTable({ results, loading }: ResultsTableProps) {
                 </TableBody>
               </Table>
             </div>
-
-            {/* Pagination Controls */}
-            {totalPages > 1 && (
-              <div className="flex items-center justify-between mt-6">
-                <div className="text-sm text-gray-600">
-                  Showing {startIndex + 1} to{" "}
-                  {Math.min(endIndex, results.length)} of {results.length}{" "}
-                  results
-                </div>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handlePageChange(currentPage - 1)}
-                    disabled={currentPage === 1}
-                  >
-                    <ChevronLeft className="h-4 w-4 mr-1" />
-                    Previous
-                  </Button>
-
-                  <div className="flex items-center gap-1">
-                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(
-                      (page) => {
-                        // Show first page, last page, current page, and pages around current
-                        const showPage =
-                          page === 1 ||
-                          page === totalPages ||
-                          (page >= currentPage - 1 && page <= currentPage + 1);
-
-                        if (!showPage) {
-                          // Show ellipsis for gaps
-                          if (page === 2 && currentPage > 4) {
-                            return (
-                              <span key={page} className="px-2 text-gray-400">
-                                ...
-                              </span>
-                            );
-                          }
-                          if (
-                            page === totalPages - 1 &&
-                            currentPage < totalPages - 3
-                          ) {
-                            return (
-                              <span key={page} className="px-2 text-gray-400">
-                                ...
-                              </span>
-                            );
-                          }
-                          return null;
-                        }
-
-                        return (
-                          <Button
-                            key={page}
-                            variant={
-                              page === currentPage ? "default" : "outline"
-                            }
-                            size="sm"
-                            onClick={() => handlePageChange(page)}
-                            className="w-8 h-8 p-0"
-                          >
-                            {page}
-                          </Button>
-                        );
-                      }
-                    )}
-                  </div>
-
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handlePageChange(currentPage + 1)}
-                    disabled={currentPage === totalPages}
-                  >
-                    Next
-                    <ChevronRight className="h-4 w-4 ml-1" />
-                  </Button>
-                </div>
-              </div>
-            )}
-          </>
-        )}
-      </CardContent>
-    </Card>
+          </div>
+        </>
+      )}
+    </div>
   );
 }

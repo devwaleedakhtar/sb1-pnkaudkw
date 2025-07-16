@@ -21,7 +21,7 @@ import {
   ChevronRight,
   Send,
 } from "lucide-react";
-import { MediaFilters } from "./filter-sidebar";
+import { MediaFilters } from "@/lib/types";
 import {
   Collapsible,
   CollapsibleContent,

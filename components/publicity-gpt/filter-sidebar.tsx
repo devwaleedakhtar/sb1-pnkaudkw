@@ -24,21 +24,11 @@ import {
   ChevronDown,
   ChevronRight,
 } from "lucide-react";
+import { MediaFilters } from "@/lib/types";
 
 interface FilterSidebarProps {
   onFiltersChange: (filters: MediaFilters) => void;
   onClearFilters: () => void;
-}
-
-export interface MediaFilters {
-  dateRange: {
-    start: string;
-    end: string;
-  };
-  mediaTypes: string[];
-  sentiment: string[];
-  outlets: string[];
-  minReach: number;
 }
 
 export function FilterSidebar({

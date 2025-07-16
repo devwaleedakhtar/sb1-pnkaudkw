@@ -94,3 +94,32 @@ export interface Activity {
   description: string;
   timestamp: Date;
 }
+
+export interface ChatMessage {
+  id: string;
+  type: "user" | "assistant";
+  content: string;
+  timestamp: Date;
+  filters?: MediaFilters;
+}
+
+export interface SavedFilter {
+  id: string;
+  name: string;
+  description: string;
+  query: string;
+  filters: MediaFilters;
+  createdAt: Date;
+  resultCount?: number;
+}
+
+export interface MediaFilters {
+  dateRange: {
+    start: string;
+    end: string;
+  };
+  mediaTypes: string[];
+  sentiment: string[];
+  outlets: string[];
+  minReach: number;
+}
