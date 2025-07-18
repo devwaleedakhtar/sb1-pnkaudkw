@@ -2,9 +2,16 @@
 
 import "./globals.css";
 import { Poppins } from "next/font/google";
-import { useState, createContext, useContext, ReactNode } from "react";
+import {
+  useState,
+  createContext,
+  useContext,
+  ReactNode,
+  useEffect,
+} from "react";
 import { Campaign } from "@/lib/types";
 import { Sidebar } from "@/components/layout/sidebar";
+import { api } from "@/lib/mock-api";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -37,6 +44,22 @@ export default function RootLayout({
   const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(
     null
   );
+
+  // Load and select the first campaign by default
+  useEffect(() => {
+    const loadDefaultCampaign = async () => {
+      try {
+        const campaigns = await api.getCampaigns();
+        if (campaigns.length > 0 && !selectedCampaign) {
+          setSelectedCampaign(campaigns[0]);
+        }
+      } catch (error) {
+        console.error("Error loading default campaign:", error);
+      }
+    };
+
+    loadDefaultCampaign();
+  }, [selectedCampaign]);
 
   return (
     <html lang="en" className="h-full">

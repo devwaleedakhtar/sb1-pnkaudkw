@@ -187,7 +187,7 @@ Additional Notes:
 Looking for authentic reviews and product demonstrations. Focus on real-world use cases and customer testimonials.`;
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="w-full">
       <Card className="shadow-lg border-0 bg-white">
         {campaign && (
           <CardHeader className="bg-gradient-to-r from-pink-50 to-purple-50 border-b">
