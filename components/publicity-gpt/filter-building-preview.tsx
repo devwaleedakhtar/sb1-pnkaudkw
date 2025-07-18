@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { MediaFilters } from "@/lib/types";
@@ -20,21 +21,41 @@ import {
   Wand2,
   Database,
   FileText,
+  Play,
+  Save,
+  Settings,
 } from "lucide-react";
 
 interface FilterBuildingPreviewProps {
   currentFilters: MediaFilters;
   isBuilding: boolean;
   lastMessage?: string;
+  onRunSearch: (filters: MediaFilters, query: string) => void;
+  onSaveFilter: (
+    name: string,
+    description: string,
+    query: string,
+    filters: MediaFilters
+  ) => void;
+  onAdjust: () => void;
+  currentQuery: string;
+  searching: boolean;
 }
 
 export function FilterBuildingPreview({
   currentFilters,
   isBuilding,
   lastMessage,
+  onRunSearch,
+  onSaveFilter,
+  onAdjust,
+  currentQuery,
+  searching,
 }: FilterBuildingPreviewProps) {
   const [buildingProgress, setBuildingProgress] = useState(0);
   const [buildingSteps, setBuildingSteps] = useState<string[]>([]);
+  const [showSaveDialog, setShowSaveDialog] = useState(false);
+  const [filterName, setFilterName] = useState("");
 
   useEffect(() => {
     if (isBuilding) {
@@ -45,7 +66,7 @@ export function FilterBuildingPreview({
         "Analyzing your request...",
         "Identifying media types...",
         "Setting date parameters...",
-        "Configuring sentiment filters...",
+        "Configuring sentiment searches...",
         "Selecting relevant outlets...",
         "Finalizing search parameters...",
       ];
@@ -110,13 +131,32 @@ export function FilterBuildingPreview({
     );
   };
 
+  const handleRunSearch = () => {
+    if (hasActiveFilters() && currentQuery) {
+      onRunSearch(currentFilters, currentQuery);
+    }
+  };
+
+  const handleSaveFilter = () => {
+    if (hasActiveFilters() && filterName.trim() && currentQuery) {
+      onSaveFilter(
+        filterName.trim(),
+        `AI-generated search: ${currentQuery}`,
+        currentQuery,
+        currentFilters
+      );
+      setShowSaveDialog(false);
+      setFilterName("");
+    }
+  };
+
   if (isBuilding) {
     return (
       <Card className="h-fit">
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-sm">
             <Wand2 className="h-4 w-4 animate-pulse text-blue-500" />
-            Building Filter
+            Building Search
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -167,7 +207,7 @@ export function FilterBuildingPreview({
         {!hasActiveFilters() ? (
           <div className="text-center py-8 text-gray-500">
             <Database className="h-8 w-8 mx-auto mb-2 text-gray-400" />
-            <p className="text-sm">No filters applied</p>
+            <p className="text-sm">No searches applied</p>
             <p className="text-xs text-gray-400 mt-1">
               Chat with AI to build your search
             </p>
@@ -283,9 +323,9 @@ export function FilterBuildingPreview({
 
             <Separator />
 
-            {/* Filter Summary */}
+            {/* Search Summary */}
             <div className="pt-2 border-t">
-              <div className="text-xs text-gray-500 mb-1">Filter Summary:</div>
+              <div className="text-xs text-gray-500 mb-1">Search Summary:</div>
               <div className="text-sm text-gray-700">
                 Searching for{" "}
                 {currentFilters.mediaTypes.length > 0 && (
@@ -321,6 +361,70 @@ export function FilterBuildingPreview({
                 )}
               </div>
             </div>
+
+            {/* Action Buttons */}
+            <div className="space-y-2 pt-2">
+              <Button
+                size="sm"
+                onClick={handleRunSearch}
+                className="w-full"
+                disabled={searching}
+              >
+                <Play className="h-4 w-4 mr-2" />
+                {searching ? "Running..." : "Run Search"}
+              </Button>
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setShowSaveDialog(true)}
+                  className="flex-1"
+                >
+                  <Save className="h-4 w-4 mr-2" />
+                  Save
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={onAdjust}
+                  className="flex-1"
+                >
+                  <Settings className="h-4 w-4 mr-2" />
+                  Adjust
+                </Button>
+              </div>
+            </div>
+
+            {/* Save Dialog */}
+            {showSaveDialog && (
+              <div className="pt-2 border-t">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Search Name:</label>
+                  <Input
+                    value={filterName}
+                    onChange={(e) => setFilterName(e.target.value)}
+                    placeholder="Enter a name for this search..."
+                    className="text-sm"
+                  />
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      onClick={handleSaveFilter}
+                      disabled={!filterName.trim()}
+                    >
+                      Save
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setShowSaveDialog(false)}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </CardContent>

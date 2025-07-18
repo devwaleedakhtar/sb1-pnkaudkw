@@ -31,23 +31,21 @@ interface ChatInterfaceProps {
     filters: MediaFilters
   ) => void;
   onRunSearch: (filters: MediaFilters, query: string) => void;
+  currentFilters: MediaFilters;
+  currentQuery: string;
 }
 
 export function ChatInterface({
   onFiltersGenerated,
   onSaveFilter,
   onRunSearch,
+  currentFilters,
+  currentQuery,
 }: ChatInterfaceProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [currentFilters, setCurrentFilters] = useState<MediaFilters | null>(
-    null
-  );
-  const [currentQuery, setCurrentQuery] = useState("");
   const [suggestions, setSuggestions] = useState<string[]>([]);
-  const [showSaveDialog, setShowSaveDialog] = useState(false);
-  const [filterName, setFilterName] = useState("");
   const [showManualAdjustment, setShowManualAdjustment] = useState(false);
 
   const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -108,8 +106,6 @@ export function ChatInterface({
       setSuggestions(response.suggestions || []);
 
       if (response.filters) {
-        setCurrentFilters(response.filters);
-        setCurrentQuery(content);
         onFiltersGenerated(response.filters, content);
       }
     } catch (error) {
@@ -139,44 +135,17 @@ export function ChatInterface({
     handleSendMessage(suggestion);
   };
 
-  const handleRunSearch = () => {
-    if (currentFilters) {
-      onRunSearch(currentFilters, currentQuery);
-    }
-  };
-
-  const handleSaveFilter = () => {
-    if (currentFilters && filterName.trim()) {
-      onSaveFilter(
-        filterName.trim(),
-        `AI-generated filter: ${currentQuery}`,
-        currentQuery,
-        currentFilters
-      );
-      setShowSaveDialog(false);
-      setFilterName("");
-    }
-  };
-
   const handleManualAdjustment = () => {
     setShowManualAdjustment(true);
   };
 
   const handleManualFiltersChange = (filters: MediaFilters) => {
-    setCurrentFilters(filters);
     onFiltersGenerated(filters, currentQuery);
   };
 
-  const handleManualSave = () => {
-    setShowSaveDialog(true);
-    setShowManualAdjustment(false);
-  };
-
   const handleManualRunSearch = () => {
-    if (currentFilters) {
-      onRunSearch(currentFilters, currentQuery);
-      setShowManualAdjustment(false);
-    }
+    onRunSearch(currentFilters, currentQuery);
+    setShowManualAdjustment(false);
   };
 
   const formatMessage = (content: string) => {
@@ -192,7 +161,7 @@ export function ChatInterface({
       <ManualFilterAdjustment
         filters={currentFilters}
         onFiltersChange={handleManualFiltersChange}
-        onSave={handleManualSave}
+        onSave={() => setShowManualAdjustment(false)}
         onRunSearch={handleManualRunSearch}
         onClose={() => setShowManualAdjustment(false)}
       />
@@ -277,57 +246,6 @@ export function ChatInterface({
           </div>
         </ScrollArea>
 
-        {/* Action Buttons */}
-        {currentFilters && (
-          <div className="flex-shrink-0 px-6 py-3 border-t bg-gray-50">
-            <div className="flex gap-2">
-              <Button size="sm" onClick={handleRunSearch} className="flex-1">
-                <Play className="h-4 w-4 mr-2" />
-                Run Search
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => setShowSaveDialog(true)}
-              >
-                <Save className="h-4 w-4 mr-2" />
-                Save Filter
-              </Button>
-            </div>
-          </div>
-        )}
-
-        {/* Save Dialog */}
-        {showSaveDialog && (
-          <div className="flex-shrink-0 px-6 py-3 border-t bg-blue-50">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Filter Name:</label>
-              <Input
-                value={filterName}
-                onChange={(e) => setFilterName(e.target.value)}
-                placeholder="Enter a name for this filter..."
-                className="text-sm"
-              />
-              <div className="flex gap-2">
-                <Button
-                  size="sm"
-                  onClick={handleSaveFilter}
-                  disabled={!filterName.trim()}
-                >
-                  Save
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setShowSaveDialog(false)}
-                >
-                  Cancel
-                </Button>
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* Suggestions */}
         {suggestions.length > 0 && (
           <div className="flex-shrink-0 px-6 py-3 border-t">
@@ -344,7 +262,9 @@ export function ChatInterface({
                   {suggestion}
                 </Button>
               ))}
-              {currentFilters && (
+              {Object.values(currentFilters).some(
+                (arr) => Array.isArray(arr) && arr.length > 0
+              ) && (
                 <Button
                   variant="outline"
                   size="sm"
@@ -352,12 +272,13 @@ export function ChatInterface({
                   className="text-xs"
                 >
                   <Settings className="h-3 w-3 mr-1" />
-                  Adjust Filters
+                  Adjust Searches
                 </Button>
               )}
             </div>
           </div>
         )}
+
         {/* Input Area - Inside the chat container */}
         <div className="flex-shrink-0 px-6 py-4 border-t">
           <div className="flex gap-2">

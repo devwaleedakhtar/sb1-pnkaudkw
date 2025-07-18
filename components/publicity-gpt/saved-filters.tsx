@@ -113,15 +113,15 @@ export function SavedFilters({
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Bookmark className="h-5 w-5" />
-            Saved Filters
+            Saved Searches
           </CardTitle>
         </CardHeader>
         <CardContent className="flex-1 flex items-center justify-center">
           <div className="text-center text-gray-500">
             <Bookmark className="h-12 w-12 mx-auto mb-4 opacity-50" />
-            <p className="text-lg font-medium mb-2">No saved filters yet</p>
+            <p className="text-lg font-medium mb-2">No saved searches yet</p>
             <p className="text-sm">
-              Use the AI chat to create filters and save them for quick access
+              Use the AI chat to create searches and save them for quick access
             </p>
           </div>
         </CardContent>
@@ -135,7 +135,7 @@ export function SavedFilters({
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Bookmark className="h-5 w-5" />
-            Saved Filters
+            Saved Searches
             <Badge variant="secondary" className="ml-auto">
               {savedFilters.length}
             </Badge>
@@ -194,13 +194,11 @@ export function SavedFilters({
                       </DropdownMenu>
                     </div>
 
-                    {/* Filter Summary */}
+                    {/* Search Summary */}
                     <div className="space-y-2">
                       <div className="text-xs text-gray-600">
                         {getFilterSummary(filter.filters)}
                       </div>
-
-                      {/* Filter Tags */}
                       <div className="flex flex-wrap gap-1">
                         {filter.filters.mediaTypes.map((type) => (
                           <Badge
@@ -214,6 +212,7 @@ export function SavedFilters({
                         {filter.filters.sentiment.map((sentiment) => (
                           <Badge
                             key={sentiment}
+                            variant="outline"
                             className={`text-xs ${getSentimentColor([
                               sentiment,
                             ])}`}
@@ -221,35 +220,7 @@ export function SavedFilters({
                             {sentiment}
                           </Badge>
                         ))}
-                        {filter.filters.outlets.map((outlet) => (
-                          <Badge
-                            key={outlet}
-                            variant="secondary"
-                            className="text-xs"
-                          >
-                            <Building className="h-3 w-3 mr-1" />
-                            {outlet}
-                          </Badge>
-                        ))}
-                        {filter.filters.minReach > 0 && (
-                          <Badge variant="outline" className="text-xs">
-                            <TrendingUp className="h-3 w-3 mr-1" />
-                            {filter.filters.minReach.toLocaleString()}+ reach
-                          </Badge>
-                        )}
                       </div>
-                    </div>
-
-                    {/* Quick Actions */}
-                    <div className="flex gap-2 mt-3">
-                      <Button
-                        size="sm"
-                        onClick={() => onRunFilter(filter)}
-                        className="flex-1"
-                      >
-                        <Search className="h-4 w-4 mr-2" />
-                        Run Search
-                      </Button>
                     </div>
                   </CardContent>
                 </Card>
@@ -259,11 +230,10 @@ export function SavedFilters({
         </CardContent>
       </Card>
 
-      {/* Delete Confirmation Dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Saved Filter</AlertDialogTitle>
+            <AlertDialogTitle>Delete Saved Search</AlertDialogTitle>
             <AlertDialogDescription>
               Are you sure you want to delete "{filterToDelete?.name}"? This
               action cannot be undone.

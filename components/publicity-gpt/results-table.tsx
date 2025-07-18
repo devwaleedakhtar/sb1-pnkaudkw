@@ -5,6 +5,15 @@ import { MediaResult } from "@/lib/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -37,6 +46,10 @@ import {
   ChevronRight,
   Grid3X3,
   List,
+  Filter,
+  Upload,
+  FileDown,
+  Search,
 } from "lucide-react";
 import { getMediaIcon, getOutletIcon } from "./media-icons";
 import { formatDistanceToNow, format } from "date-fns";
@@ -54,7 +67,7 @@ interface ResultsTableProps {
   }) => void;
 }
 
-const ITEMS_PER_PAGE = 5;
+const ITEMS_PER_PAGE = 10;
 
 export function ResultsTable({
   results,
@@ -62,11 +75,37 @@ export function ResultsTable({
   onPaginationChange,
 }: ResultsTableProps) {
   const [currentPage, setCurrentPage] = useState(1);
+  const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
+  const [filters, setFilters] = useState({
+    search: "",
+    outlet: "all",
+    topic: "all",
+  });
 
-  const totalPages = Math.ceil(results.length / ITEMS_PER_PAGE);
+  // Get unique values for filter options
+  const outlets = Array.from(new Set(results.map((r) => r.outlet)));
+  const topics = Array.from(new Set(results.map((r) => r.topic)));
+
+  // Filter results based on current filters
+  const filteredResults = results.filter((result) => {
+    const matchesSearch =
+      !filters.search ||
+      result.title.toLowerCase().includes(filters.search.toLowerCase()) ||
+      result.summary.toLowerCase().includes(filters.search.toLowerCase()) ||
+      result.author.toLowerCase().includes(filters.search.toLowerCase());
+
+    const matchesOutlet =
+      filters.outlet === "all" || result.outlet === filters.outlet;
+    const matchesTopic =
+      filters.topic === "all" || result.topic === filters.topic;
+
+    return matchesSearch && matchesOutlet && matchesTopic;
+  });
+
+  const totalPages = Math.ceil(filteredResults.length / ITEMS_PER_PAGE);
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
   const endIndex = startIndex + ITEMS_PER_PAGE;
-  const currentResults = results.slice(startIndex, endIndex);
+  const currentResults = filteredResults.slice(startIndex, endIndex);
 
   const getSentimentColor = (sentiment: MediaResult["sentiment"]) => {
     switch (sentiment) {
@@ -94,20 +133,49 @@ export function ResultsTable({
     }
   };
 
-  const formatReach = (reach: number) => {
-    if (reach >= 1000000) {
-      return `${(reach / 1000000).toFixed(1)}M`;
-    } else if (reach >= 1000) {
-      return `${(reach / 1000).toFixed(1)}K`;
+  const formatImpressions = (impressions: number) => {
+    if (impressions >= 1000000) {
+      return `${(impressions / 1000000).toFixed(1)}M`;
+    } else if (impressions >= 1000) {
+      return `${(impressions / 1000).toFixed(1)}K`;
     }
-    return reach.toString();
+    return impressions.toString();
   };
 
-  const getReachColor = (reach: number) => {
-    if (reach >= 1000000) return "text-red-600 font-semibold";
-    if (reach >= 100000) return "text-orange-600 font-semibold";
-    if (reach >= 10000) return "text-blue-600 font-medium";
-    return "text-gray-600";
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedItems(new Set(currentResults.map((r) => r.id)));
+    } else {
+      setSelectedItems(new Set());
+    }
+  };
+
+  const handleSelectItem = (id: string, checked: boolean) => {
+    const newSelected = new Set(Array.from(selectedItems));
+    if (checked) {
+      newSelected.add(id);
+    } else {
+      newSelected.delete(id);
+    }
+    setSelectedItems(newSelected);
+  };
+
+  const handleUpload = () => {
+    console.log("Uploading selected items:", Array.from(selectedItems));
+    // In a real app, this would trigger file upload
+  };
+
+  const handleExport = () => {
+    console.log("Exporting selected items:", Array.from(selectedItems));
+    // In a real app, this would trigger CSV/Excel export
+  };
+
+  const clearFilters = () => {
+    setFilters({
+      search: "",
+      outlet: "all",
+      topic: "all",
+    });
   };
 
   const handleSaveArticle = (result: MediaResult) => {
@@ -129,10 +197,10 @@ export function ResultsTable({
     setCurrentPage(page);
   };
 
-  // Reset to page 1 when results change
+  // Reset to page 1 when results or filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [results]);
+  }, [results, filters]);
 
   // Notify parent about pagination state
   useEffect(() => {
@@ -142,7 +210,7 @@ export function ResultsTable({
         totalPages,
         startIndex,
         endIndex,
-        totalResults: results.length,
+        totalResults: filteredResults.length,
         handlePageChange,
       });
     }
@@ -151,11 +219,9 @@ export function ResultsTable({
     totalPages,
     startIndex,
     endIndex,
-    results.length,
+    filteredResults.length,
     onPaginationChange,
   ]);
-
-  const totalReach = results.reduce((sum, r) => sum + r.reach, 0);
 
   if (loading) {
     return (
@@ -202,17 +268,121 @@ export function ResultsTable({
         </div>
       ) : (
         <>
+          {/* Filters */}
+          <div className="mb-6 p-4 bg-gray-50 rounded-lg">
+            <div className="flex items-center gap-2 mb-4">
+              <Filter className="h-4 w-4" />
+              <h3 className="font-medium">Filters</h3>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={clearFilters}
+                className="ml-auto"
+              >
+                Clear All
+              </Button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+              <div>
+                <label className="text-sm font-medium mb-1 block">Search</label>
+                <Input
+                  placeholder="Search articles..."
+                  value={filters.search}
+                  onChange={(e) =>
+                    setFilters((prev) => ({ ...prev, search: e.target.value }))
+                  }
+                  className="h-9"
+                />
+              </div>
+
+              <div>
+                <label className="text-sm font-medium mb-1 block">Outlet</label>
+                <Select
+                  value={filters.outlet}
+                  onValueChange={(value) =>
+                    setFilters((prev) => ({ ...prev, outlet: value }))
+                  }
+                >
+                  <SelectTrigger className="h-9">
+                    <SelectValue placeholder="All outlets" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All outlets</SelectItem>
+                    {outlets.map((outlet) => (
+                      <SelectItem key={outlet} value={outlet}>
+                        {outlet}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium mb-1 block">Topic</label>
+                <Select
+                  value={filters.topic}
+                  onValueChange={(value) =>
+                    setFilters((prev) => ({ ...prev, topic: value }))
+                  }
+                >
+                  <SelectTrigger className="h-9">
+                    <SelectValue placeholder="All topics" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All topics</SelectItem>
+                    {topics.map((topic) => (
+                      <SelectItem key={topic} value={topic}>
+                        {topic}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+
+          {/* Selection Actions */}
+          {selectedItems.size > 0 && (
+            <div className="mb-4 p-3 bg-blue-50 rounded-lg flex items-center justify-between">
+              <span className="text-sm text-blue-900">
+                {selectedItems.size} item{selectedItems.size !== 1 ? "s" : ""}{" "}
+                selected
+              </span>
+              <div className="flex gap-2">
+                <Button size="sm" onClick={handleUpload}>
+                  <Upload className="h-4 w-4 mr-2" />
+                  Upload
+                </Button>
+                <Button size="sm" variant="outline" onClick={handleExport}>
+                  <FileDown className="h-4 w-4 mr-2" />
+                  Export
+                </Button>
+              </div>
+            </div>
+          )}
+
           <div className="overflow-auto max-h-[500px]">
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-[40%]">Article</TableHead>
-                    <TableHead className="w-[15%]">Outlet</TableHead>
-                    <TableHead className="w-[15%]">Date</TableHead>
-                    <TableHead className="w-[12%]">Sentiment</TableHead>
-                    <TableHead className="w-[12%]">Reach</TableHead>
-                    <TableHead className="w-[6%]">Actions</TableHead>
+                    <TableHead className="w-[40px]">
+                      <Checkbox
+                        checked={
+                          currentResults.length > 0 &&
+                          selectedItems.size === currentResults.length
+                        }
+                        onCheckedChange={handleSelectAll}
+                      />
+                    </TableHead>
+                    <TableHead className="w-[100px]">Month</TableHead>
+                    <TableHead className="w-[120px]">Outlet</TableHead>
+                    <TableHead className="w-[100px]">Impressions</TableHead>
+                    <TableHead className="w-[100px]">Date</TableHead>
+                    <TableHead className="w-[120px]">Topic</TableHead>
+                    <TableHead className="w-[100px]">Author</TableHead>
+                    <TableHead className="w-[80px]">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -221,14 +391,17 @@ export function ResultsTable({
                       key={result.id}
                       className="hover:bg-gray-50/50 group"
                     >
+                      <TableCell>
+                        <Checkbox
+                          checked={selectedItems.has(result.id)}
+                          onCheckedChange={(checked) =>
+                            handleSelectItem(result.id, checked as boolean)
+                          }
+                        />
+                      </TableCell>
                       <TableCell className="py-4">
-                        <div className="space-y-2">
-                          <div className="font-medium text-gray-900 line-clamp-2 group-hover:text-blue-600 transition-colors">
-                            {result.title}
-                          </div>
-                          <div className="text-sm text-gray-600 line-clamp-2 leading-relaxed">
-                            {result.summary}
-                          </div>
+                        <div className="text-sm font-medium text-gray-900">
+                          {result.month}
                         </div>
                       </TableCell>
                       <TableCell className="py-4">
@@ -248,6 +421,14 @@ export function ResultsTable({
                         </div>
                       </TableCell>
                       <TableCell className="py-4">
+                        <div className="flex items-center gap-2">
+                          <TrendingUp className="h-4 w-4 text-gray-400" />
+                          <span className="font-medium">
+                            {formatImpressions(result.impressions)}
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="py-4">
                         <div className="space-y-1">
                           <div className="flex items-center gap-1 text-sm">
                             <Calendar className="h-3 w-3 text-gray-400" />
@@ -263,25 +444,13 @@ export function ResultsTable({
                         </div>
                       </TableCell>
                       <TableCell className="py-4">
-                        <Badge
-                          className={`${getSentimentColor(
-                            result.sentiment
-                          )} flex items-center gap-1`}
-                        >
-                          {getSentimentIcon(result.sentiment)}
-                          <span className="capitalize">{result.sentiment}</span>
+                        <Badge variant="outline" className="text-xs">
+                          {result.topic}
                         </Badge>
                       </TableCell>
                       <TableCell className="py-4">
-                        <div className="flex items-center gap-2">
-                          <TrendingUp className="h-4 w-4 text-gray-400" />
-                          <span
-                            className={`font-medium ${getReachColor(
-                              result.reach
-                            )}`}
-                          >
-                            {formatReach(result.reach)}
-                          </span>
+                        <div className="text-sm text-gray-900">
+                          {result.author}
                         </div>
                       </TableCell>
                       <TableCell className="py-4">

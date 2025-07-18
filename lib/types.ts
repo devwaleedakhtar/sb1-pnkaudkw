@@ -28,6 +28,12 @@ export interface MediaResult {
     | "Podcast"
     | "Blog"
     | "Social Media";
+  // New fields
+  month: string; // e.g., "January 2024"
+  impressions: number; // Different from reach - actual impressions
+  topic: string; // Main topic/category of the article
+  author: string; // Author name
+  source: string; // Source type (e.g., "Direct", "Syndicated", "Repost")
 }
 
 export interface Influencer {

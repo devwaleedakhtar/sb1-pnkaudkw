@@ -166,7 +166,7 @@ export function ManualFilterAdjustment({
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2">
             <Settings className="h-5 w-5" />
-            Adjust Filters
+            Adjust Searches
           </CardTitle>
           <Button variant="ghost" size="sm" onClick={onClose}>
             <X className="h-4 w-4" />
@@ -206,7 +206,7 @@ export function ManualFilterAdjustment({
                   onChange={(e) =>
                     handleDateRangeChange("start", e.target.value)
                   }
-                  className="text-xs"
+                  className="text-sm"
                 />
               </div>
               <div>
@@ -218,14 +218,12 @@ export function ManualFilterAdjustment({
                   type="date"
                   value={localFilters.dateRange.end}
                   onChange={(e) => handleDateRangeChange("end", e.target.value)}
-                  className="text-xs"
+                  className="text-sm"
                 />
               </div>
             </div>
           </CollapsibleContent>
         </Collapsible>
-
-        <Separator />
 
         {/* Media Types */}
         <Collapsible
@@ -238,7 +236,7 @@ export function ManualFilterAdjustment({
                 <FileText className="h-4 w-4" />
                 <span>Media Types</span>
                 {localFilters.mediaTypes.length > 0 && (
-                  <Badge variant="secondary" className="ml-2">
+                  <Badge variant="secondary" className="text-xs">
                     {localFilters.mediaTypes.length}
                   </Badge>
                 )}
@@ -251,22 +249,20 @@ export function ManualFilterAdjustment({
             </Button>
           </CollapsibleTrigger>
           <CollapsibleContent className="space-y-2 p-2">
-            {mediaTypes.map((type) => (
-              <div key={type} className="flex items-center space-x-2">
+            {mediaTypes.map((mediaType) => (
+              <div key={mediaType} className="flex items-center space-x-2">
                 <Checkbox
-                  id={`media-${type}`}
-                  checked={localFilters.mediaTypes.includes(type)}
-                  onCheckedChange={() => handleMediaTypeToggle(type)}
+                  id={mediaType}
+                  checked={localFilters.mediaTypes.includes(mediaType)}
+                  onCheckedChange={() => handleMediaTypeToggle(mediaType)}
                 />
-                <Label htmlFor={`media-${type}`} className="text-sm">
-                  {type}
+                <Label htmlFor={mediaType} className="text-sm">
+                  {mediaType}
                 </Label>
               </div>
             ))}
           </CollapsibleContent>
         </Collapsible>
-
-        <Separator />
 
         {/* Sentiment */}
         <Collapsible
@@ -279,7 +275,7 @@ export function ManualFilterAdjustment({
                 <Heart className="h-4 w-4" />
                 <span>Sentiment</span>
                 {localFilters.sentiment.length > 0 && (
-                  <Badge variant="secondary" className="ml-2">
+                  <Badge variant="secondary" className="text-xs">
                     {localFilters.sentiment.length}
                   </Badge>
                 )}
@@ -295,21 +291,17 @@ export function ManualFilterAdjustment({
             {sentimentOptions.map((sentiment) => (
               <div key={sentiment} className="flex items-center space-x-2">
                 <Checkbox
-                  id={`sentiment-${sentiment}`}
+                  id={sentiment}
                   checked={localFilters.sentiment.includes(sentiment)}
                   onCheckedChange={() => handleSentimentToggle(sentiment)}
                 />
-                <Label htmlFor={`sentiment-${sentiment}`} className="text-sm">
-                  <Badge className={`${getSentimentColor(sentiment)} text-xs`}>
-                    {sentiment}
-                  </Badge>
+                <Label htmlFor={sentiment} className="text-sm capitalize">
+                  {sentiment}
                 </Label>
               </div>
             ))}
           </CollapsibleContent>
         </Collapsible>
-
-        <Separator />
 
         {/* Outlets */}
         <Collapsible
@@ -322,7 +314,7 @@ export function ManualFilterAdjustment({
                 <Building className="h-4 w-4" />
                 <span>Outlets</span>
                 {localFilters.outlets.length > 0 && (
-                  <Badge variant="secondary" className="ml-2">
+                  <Badge variant="secondary" className="text-xs">
                     {localFilters.outlets.length}
                   </Badge>
                 )}
@@ -335,24 +327,35 @@ export function ManualFilterAdjustment({
             </Button>
           </CollapsibleTrigger>
           <CollapsibleContent className="space-y-2 p-2">
+            <div className="text-xs text-gray-600 mb-2">Popular Outlets:</div>
             {popularOutlets.map((outlet) => (
               <div key={outlet} className="flex items-center space-x-2">
                 <Checkbox
-                  id={`outlet-${outlet}`}
+                  id={outlet}
                   checked={localFilters.outlets.includes(outlet)}
                   onCheckedChange={() => handleOutletToggle(outlet)}
                 />
-                <Label htmlFor={`outlet-${outlet}`} className="text-sm">
+                <Label htmlFor={outlet} className="text-sm">
                   {outlet}
                 </Label>
               </div>
             ))}
+            <Separator className="my-2" />
+            <div className="text-xs text-gray-600 mb-2">Custom Outlet:</div>
+            <Input
+              placeholder="Enter outlet name..."
+              className="text-sm"
+              onKeyPress={(e) => {
+                if (e.key === "Enter" && e.currentTarget.value.trim()) {
+                  handleOutletToggle(e.currentTarget.value.trim());
+                  e.currentTarget.value = "";
+                }
+              }}
+            />
           </CollapsibleContent>
         </Collapsible>
 
-        <Separator />
-
-        {/* Minimum Reach */}
+        {/* Min Reach */}
         <Collapsible
           open={expandedSections.reach}
           onOpenChange={() => toggleSection("reach")}
@@ -363,8 +366,8 @@ export function ManualFilterAdjustment({
                 <TrendingUp className="h-4 w-4" />
                 <span>Minimum Reach</span>
                 {localFilters.minReach > 0 && (
-                  <Badge variant="secondary" className="ml-2">
-                    {localFilters.minReach.toLocaleString()}
+                  <Badge variant="secondary" className="text-xs">
+                    {localFilters.minReach.toLocaleString()}+
                   </Badge>
                 )}
               </div>
@@ -376,51 +379,44 @@ export function ManualFilterAdjustment({
             </Button>
           </CollapsibleTrigger>
           <CollapsibleContent className="space-y-2 p-2">
-            <Input
-              type="number"
-              value={localFilters.minReach}
-              onChange={(e) => handleMinReachChange(e.target.value)}
-              placeholder="Enter minimum reach"
-              className="text-sm"
-            />
-            <div className="flex gap-1 flex-wrap">
-              {[1000, 10000, 100000, 1000000].map((reach) => (
-                <Button
-                  key={reach}
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleMinReachChange(reach.toString())}
-                  className="text-xs"
-                >
-                  {reach.toLocaleString()}
-                </Button>
-              ))}
+            <div>
+              <Label htmlFor="min-reach" className="text-xs">
+                Minimum reach (followers/readers)
+              </Label>
+              <Input
+                id="min-reach"
+                type="number"
+                value={localFilters.minReach || ""}
+                onChange={(e) => handleMinReachChange(e.target.value)}
+                placeholder="0"
+                className="text-sm"
+              />
             </div>
           </CollapsibleContent>
         </Collapsible>
-      </CardContent>
 
-      {/* Action Buttons */}
-      <div className="flex-shrink-0 p-4 border-t space-y-2">
-        <div className="flex gap-2">
-          <Button onClick={onRunSearch} className="flex-1">
-            <Play className="h-4 w-4 mr-2" />
-            Run Search
+        <Separator />
+
+        {/* Action Buttons */}
+        <div className="flex gap-2 pt-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={clearAllFilters}
+            className="flex-1"
+          >
+            Clear All
           </Button>
-          <Button onClick={onSave} variant="outline">
+          <Button size="sm" onClick={onSave} className="flex-1">
             <Save className="h-4 w-4 mr-2" />
             Save
           </Button>
+          <Button size="sm" onClick={onRunSearch} className="flex-1">
+            <Play className="h-4 w-4 mr-2" />
+            Run Search
+          </Button>
         </div>
-        <Button
-          onClick={clearAllFilters}
-          variant="outline"
-          className="w-full"
-          size="sm"
-        >
-          Clear All Filters
-        </Button>
-      </div>
+      </CardContent>
     </Card>
   );
 }

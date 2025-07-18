@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { MediaResult, SavedFilter, MediaFilters } from "@/lib/types";
 import { api } from "@/lib/mock-api";
 import { MockAIChat } from "@/lib/mock-ai-chat";
@@ -9,6 +9,7 @@ import { ChatInterface } from "@/components/publicity-gpt/chat-interface";
 import { SavedFilters } from "@/components/publicity-gpt/saved-filters";
 import { ResultsDisplay } from "@/components/publicity-gpt/results-display";
 import { FilterBuildingPreview } from "@/components/publicity-gpt/filter-building-preview";
+import { ManualFilterAdjustment } from "@/components/publicity-gpt/manual-filter-adjustment";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -42,7 +43,9 @@ export default function PublicityGPT() {
   const [viewMode, setViewMode] = useState<"table" | "grid">("table");
   const [isBuilding, setIsBuilding] = useState(false);
   const [lastMessage, setLastMessage] = useState("");
+  const [showManualAdjustment, setShowManualAdjustment] = useState(false);
 
+  const resultsSectionRef = useRef<HTMLDivElement>(null);
   const aiChat = MockAIChat.getInstance();
 
   useEffect(() => {
@@ -87,7 +90,16 @@ export default function PublicityGPT() {
     try {
       const data = await api.getMediaResults("1", filters, query);
       setMediaResults(data);
-      // Don't change the active tab - keep the chat visible
+
+      // Auto-scroll to results section
+      setTimeout(() => {
+        if (resultsSectionRef.current) {
+          resultsSectionRef.current.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+          });
+        }
+      }, 100);
     } catch (error) {
       console.error("Error running search:", error);
     } finally {
@@ -124,6 +136,23 @@ export default function PublicityGPT() {
     }
   };
 
+  const handleManualAdjustment = () => {
+    setShowManualAdjustment(true);
+  };
+
+  const handleManualFiltersChange = (filters: MediaFilters) => {
+    setCurrentFilters(filters);
+  };
+
+  const handleManualSave = () => {
+    setShowManualAdjustment(false);
+  };
+
+  const handleManualRunSearch = () => {
+    handleRunSearch(currentFilters, currentQuery);
+    setShowManualAdjustment(false);
+  };
+
   const getResultsTitle = () => {
     if (hasActiveSearch) {
       return `Search Results: "${currentQuery}"`;
@@ -136,10 +165,22 @@ export default function PublicityGPT() {
       const filterCount = Object.values(currentFilters)
         .flat()
         .filter(Boolean).length;
-      return `${mediaResults.length} results found with ${filterCount} active filters`;
+      return `${mediaResults.length} results found with ${filterCount} active searches`;
     }
     return `${mediaResults.length} total media mentions`;
   };
+
+  if (showManualAdjustment) {
+    return (
+      <ManualFilterAdjustment
+        filters={currentFilters}
+        onFiltersChange={handleManualFiltersChange}
+        onSave={handleManualSave}
+        onRunSearch={handleManualRunSearch}
+        onClose={() => setShowManualAdjustment(false)}
+      />
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -148,9 +189,9 @@ export default function PublicityGPT() {
         description="AI-powered media monitoring and analysis"
       />
 
-      {/* Top Section - Chat and Filter Builder */}
+      {/* Top Section - Chat and Search Builder */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        {/* Chat & Saved Filters - 75% width */}
+        {/* Chat & Saved Searches - 75% width */}
         <div className="lg:col-span-3">
           <Tabs
             value={activeTab}
@@ -178,6 +219,8 @@ export default function PublicityGPT() {
                 onFiltersGenerated={handleFiltersGenerated}
                 onSaveFilter={handleSaveFilter}
                 onRunSearch={handleRunSearch}
+                currentFilters={currentFilters}
+                currentQuery={currentQuery}
               />
             </TabsContent>
 
@@ -191,19 +234,24 @@ export default function PublicityGPT() {
           </Tabs>
         </div>
 
-        {/* Filter Builder - 25% width */}
+        {/* Search Builder - 25% width */}
         <div className="lg:col-span-1">
           <FilterBuildingPreview
             currentFilters={currentFilters}
             isBuilding={isBuilding}
             lastMessage={lastMessage}
+            onRunSearch={handleRunSearch}
+            onSaveFilter={handleSaveFilter}
+            onAdjust={handleManualAdjustment}
+            currentQuery={currentQuery}
+            searching={searching}
           />
         </div>
       </div>
 
       {/* Bottom Section - Results (Full width, only shown when search is active) */}
       {hasActiveSearch && (
-        <div className="mt-6">
+        <div className="mt-6" ref={resultsSectionRef}>
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between">
@@ -257,11 +305,11 @@ export default function PublicityGPT() {
                 </div>
               </div>
 
-              {/* Active Filters Display */}
+              {/* Active Searches Display */}
               {hasActiveSearch && (
                 <div className="mt-4 p-3 bg-blue-50 rounded-lg">
                   <div className="text-sm font-medium text-blue-900 mb-2">
-                    Active Filters:
+                    Active Searches:
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {currentFilters.dateRange.start && (
