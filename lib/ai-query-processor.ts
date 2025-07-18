@@ -19,6 +19,7 @@ export interface SocialTrackingParams {
   name: string;
   keywords: string[];
   hashtags: string[];
+  socialMediaHandles?: string[];
   platforms: ("instagram" | "twitter" | "tiktok" | "youtube")[];
   startDate: string;
   endDate: string;

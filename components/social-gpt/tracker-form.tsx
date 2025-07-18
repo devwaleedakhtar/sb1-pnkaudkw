@@ -111,6 +111,7 @@ export function TrackerForm({ campaignId, tracker, onSave }: TrackerFormProps) {
     name: tracker?.name || "",
     keywords: tracker?.keywords || [],
     hashtags: tracker?.hashtags || [],
+    socialMediaHandles: tracker?.socialMediaHandles || [],
     platforms:
       tracker?.platforms ||
       ([] as ("instagram" | "twitter" | "tiktok" | "youtube")[]),
@@ -120,6 +121,7 @@ export function TrackerForm({ campaignId, tracker, onSave }: TrackerFormProps) {
 
   const [keywordInput, setKeywordInput] = useState("");
   const [hashtagInput, setHashtagInput] = useState("");
+  const [handleInput, setHandleInput] = useState("");
 
   const platforms = [
     {
@@ -239,6 +241,7 @@ export function TrackerForm({ campaignId, tracker, onSave }: TrackerFormProps) {
         name: result.trackingParams.name,
         keywords: result.trackingParams.keywords,
         hashtags: result.trackingParams.hashtags,
+        socialMediaHandles: result.trackingParams.socialMediaHandles || [],
         platforms: result.trackingParams.platforms,
         startDate: result.trackingParams.startDate,
         endDate: result.trackingParams.endDate,
@@ -254,6 +257,11 @@ export function TrackerForm({ campaignId, tracker, onSave }: TrackerFormProps) {
         result.trackingParams.hashtags.length > 0
           ? ` and ${result.trackingParams.hashtags.length} hashtags`
           : ""
+      }${
+        result.trackingParams.socialMediaHandles &&
+        result.trackingParams.socialMediaHandles.length > 0
+          ? ` and ${result.trackingParams.socialMediaHandles.length} social media handles`
+          : ""
       } across ${result.trackingParams.platforms.length} platform${
         result.trackingParams.platforms.length > 1 ? "s" : ""
       }.`;
@@ -267,6 +275,11 @@ export function TrackerForm({ campaignId, tracker, onSave }: TrackerFormProps) {
           ", "
         )}\n• **Hashtags**: ${
           result.trackingParams.hashtags.join(", ") || "None"
+        }\n• **Social Media Handles**: ${
+          result.trackingParams.socialMediaHandles &&
+          result.trackingParams.socialMediaHandles.length > 0
+            ? result.trackingParams.socialMediaHandles.join(", ")
+            : "None"
         }\n• **Platforms**: ${result.trackingParams.platforms.join(
           ", "
         )}\n• **Duration**: ${result.trackingParams.startDate} to ${
@@ -373,6 +386,7 @@ export function TrackerForm({ campaignId, tracker, onSave }: TrackerFormProps) {
         name: formData.name,
         keywords: formData.keywords,
         hashtags: formData.hashtags,
+        socialMediaHandles: formData.socialMediaHandles,
         platforms: formData.platforms,
         startDate: new Date(formData.startDate),
         endDate: new Date(formData.endDate),
@@ -440,6 +454,24 @@ export function TrackerForm({ campaignId, tracker, onSave }: TrackerFormProps) {
     setFormData((prev) => ({
       ...prev,
       hashtags: prev.hashtags.filter((h) => h !== hashtag),
+    }));
+  };
+
+  const addHandle = () => {
+    const handle = handleInput.trim();
+    if (handle && !formData.socialMediaHandles.includes(handle)) {
+      setFormData((prev) => ({
+        ...prev,
+        socialMediaHandles: [...prev.socialMediaHandles, handle],
+      }));
+      setHandleInput("");
+    }
+  };
+
+  const removeHandle = (handle: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      socialMediaHandles: prev.socialMediaHandles.filter((h) => h !== handle),
     }));
   };
 
@@ -1061,6 +1093,47 @@ export function TrackerForm({ campaignId, tracker, onSave }: TrackerFormProps) {
                           <button
                             type="button"
                             onClick={() => removeHashtag(hashtag)}
+                            className="ml-1 hover:text-red-500"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Social Media Handles */}
+                <div className="space-y-2">
+                  <Label>
+                    Social Media Handles to Track (
+                    {formData.socialMediaHandles.length} handles)
+                  </Label>
+                  <div className="flex space-x-2">
+                    <Input
+                      value={handleInput}
+                      onChange={(e) => setHandleInput(e.target.value)}
+                      placeholder="Enter social media handle (e.g., @TechCorp, #ProductLaunch)"
+                      onKeyPress={(e) =>
+                        e.key === "Enter" && (e.preventDefault(), addHandle())
+                      }
+                    />
+                    <Button type="button" onClick={addHandle} variant="outline">
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  {formData.socialMediaHandles.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {formData.socialMediaHandles.map((handle) => (
+                        <Badge
+                          key={handle}
+                          variant="outline"
+                          className="flex items-center space-x-1"
+                        >
+                          <span>{handle}</span>
+                          <button
+                            type="button"
+                            onClick={() => removeHandle(handle)}
                             className="ml-1 hover:text-red-500"
                           >
                             <X className="h-3 w-3" />

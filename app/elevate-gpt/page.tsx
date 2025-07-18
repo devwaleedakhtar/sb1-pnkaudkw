@@ -13,9 +13,12 @@ import { ChatInterface } from "@/components/elevate-gpt/chat-interface";
 import { SavedFilters } from "@/components/elevate-gpt/saved-filters";
 import { InfluencerGrid } from "@/components/elevate-gpt/influencer-grid";
 import { FilterBuildingPreview } from "@/components/elevate-gpt/filter-building-preview";
+import { ManualFilterAdjustment } from "@/components/elevate-gpt/manual-filter-adjustment";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   MessageCircle,
@@ -29,6 +32,12 @@ import {
   Database,
   Grid3X3,
   List,
+  Upload,
+  FileText,
+  X,
+  Loader2,
+  Star,
+  Download,
 } from "lucide-react";
 
 export default function ElevateGPT() {
@@ -50,6 +59,11 @@ export default function ElevateGPT() {
   const [activeTab, setActiveTab] = useState("chat");
   const [isBuilding, setIsBuilding] = useState(false);
   const [lastMessage, setLastMessage] = useState("");
+  const [showManualAdjustment, setShowManualAdjustment] = useState(false);
+  const [showSaveDialog, setShowSaveDialog] = useState(false);
+  const [filterName, setFilterName] = useState("");
+  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
   const [searchStats, setSearchStats] = useState({
     totalResults: 0,
     averageEngagement: 0,
@@ -185,6 +199,65 @@ export default function ElevateGPT() {
     // No refresh action if no active search
   };
 
+  const handleToggleInternalDb = (enabled: boolean) => {
+    setCurrentFilters((prev) => ({ ...prev, useInternalDb: enabled }));
+  };
+
+  const handleManualAdjustment = () => {
+    setShowManualAdjustment(true);
+  };
+
+  const handleSaveFilterFromPreview = () => {
+    setShowSaveDialog(true);
+  };
+
+  const handleSaveFilterDialog = () => {
+    if (!filterName.trim()) return;
+
+    handleSaveFilter(
+      filterName.trim(),
+      "AI-generated influencer filter",
+      currentQuery,
+      currentFilters
+    );
+    setShowSaveDialog(false);
+    setFilterName("");
+  };
+
+  const handleManualAdjustmentSave = (adjustedFilters: InfluencerFilters) => {
+    setCurrentFilters(adjustedFilters);
+    setShowManualAdjustment(false);
+  };
+
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files || []);
+    setUploadedFiles((prev) => [...prev, ...files]);
+  };
+
+  const handleRemoveFile = (index: number) => {
+    setUploadedFiles((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleProcessUploads = async () => {
+    if (uploadedFiles.length === 0) return;
+
+    setIsUploading(true);
+    try {
+      // Simulate processing time
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+
+      // Here you would typically process the files and add them to your database
+      console.log("Processing uploaded files:", uploadedFiles);
+
+      // Clear uploaded files after processing
+      setUploadedFiles([]);
+    } catch (error) {
+      console.error("Error processing uploads:", error);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   const handleExportShortlist = (shortlisted: Influencer[]) => {
     console.log("Exporting shortlist:", shortlisted);
 
@@ -228,7 +301,7 @@ export default function ElevateGPT() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="ElevateGPT"
+        title="Elevate"
         description="AI-powered influencer discovery and analysis platform"
       >
         <div className="flex items-center space-x-3">
@@ -261,7 +334,7 @@ export default function ElevateGPT() {
             onValueChange={setActiveTab}
             className="h-full"
           >
-            <TabsList className="grid w-full grid-cols-2">
+            <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="chat" className="flex items-center gap-2">
                 <MessageCircle className="h-4 w-4" />
                 AI Chat
@@ -274,6 +347,10 @@ export default function ElevateGPT() {
                     {savedFilters.length}
                   </Badge>
                 )}
+              </TabsTrigger>
+              <TabsTrigger value="internal" className="flex items-center gap-2">
+                <Database className="h-4 w-4" />
+                Internal Database
               </TabsTrigger>
             </TabsList>
 
@@ -292,6 +369,159 @@ export default function ElevateGPT() {
                 onDeleteFilter={handleDeleteSavedFilter}
               />
             </TabsContent>
+
+            <TabsContent value="internal" className="h-full mt-4">
+              <Card className="h-full">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Database className="h-5 w-5" />
+                    Internal Database
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {/* Upload Section */}
+                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                    <Database className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                      Upload Your Data
+                    </h3>
+                    <p className="text-gray-600 mb-4">
+                      Add your own influencer data to the internal database.
+                      Supported formats: CSV, Excel (.xlsx, .xls)
+                    </p>
+
+                    <div className="space-y-4">
+                      <div>
+                        <input
+                          type="file"
+                          multiple
+                          accept=".csv,.xlsx,.xls"
+                          onChange={handleFileUpload}
+                          className="hidden"
+                          id="file-upload"
+                        />
+                        <label
+                          htmlFor="file-upload"
+                          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 cursor-pointer"
+                        >
+                          <Upload className="h-4 w-4 mr-2" />
+                          Choose Files
+                        </label>
+                      </div>
+
+                      {uploadedFiles.length > 0 && (
+                        <div className="space-y-2">
+                          <h4 className="font-medium text-gray-900">
+                            Selected Files:
+                          </h4>
+                          <div className="space-y-2">
+                            {uploadedFiles.map((file, index) => (
+                              <div
+                                key={index}
+                                className="flex items-center justify-between bg-gray-50 p-3 rounded-lg"
+                              >
+                                <div className="flex items-center space-x-3">
+                                  <FileText className="h-4 w-4 text-gray-500" />
+                                  <span className="text-sm text-gray-700">
+                                    {file.name}
+                                  </span>
+                                  <span className="text-xs text-gray-500">
+                                    ({(file.size / 1024).toFixed(1)} KB)
+                                  </span>
+                                </div>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleRemoveFile(index)}
+                                  className="h-6 w-6 p-0"
+                                >
+                                  <X className="h-3 w-3" />
+                                </Button>
+                              </div>
+                            ))}
+                          </div>
+                          <Button
+                            onClick={handleProcessUploads}
+                            disabled={isUploading}
+                            className="w-full bg-green-600 hover:bg-green-700 text-white"
+                          >
+                            {isUploading ? (
+                              <>
+                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                Processing...
+                              </>
+                            ) : (
+                              <>
+                                <Upload className="h-4 w-4 mr-2" />
+                                Process Files
+                              </>
+                            )}
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Database Info */}
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <h4 className="font-medium text-gray-900 mb-3">
+                      Database Features:
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-600">
+                      <div className="space-y-2">
+                        <div className="flex items-center space-x-2">
+                          <Users className="h-4 w-4 text-blue-500" />
+                          <span>
+                            View influencers who have worked with your campaigns
+                          </span>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <TrendingUp className="h-4 w-4 text-green-500" />
+                          <span>
+                            Track collaboration history and performance
+                          </span>
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <div className="flex items-center space-x-2">
+                          <Star className="h-4 w-4 text-yellow-500" />
+                          <span>Manage internal ratings and notes</span>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Download className="h-4 w-4 text-purple-500" />
+                          <span>Export collaboration data</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Quick Actions */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <Button
+                      variant="outline"
+                      className="h-20 flex flex-col items-center justify-center"
+                    >
+                      <Users className="h-5 w-5 mb-2" />
+                      <span className="text-sm">View All Influencers</span>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="h-20 flex flex-col items-center justify-center"
+                    >
+                      <TrendingUp className="h-5 w-5 mb-2" />
+                      <span className="text-sm">Performance Report</span>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="h-20 flex flex-col items-center justify-center"
+                    >
+                      <Download className="h-5 w-5 mb-2" />
+                      <span className="text-sm">Export Data</span>
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
           </Tabs>
         </div>
 
@@ -301,6 +531,10 @@ export default function ElevateGPT() {
             currentFilters={currentFilters}
             isBuilding={isBuilding}
             lastMessage={lastMessage}
+            onRunSearch={() => handleRunSearch(currentFilters, currentQuery)}
+            onAdjust={handleManualAdjustment}
+            onSave={handleSaveFilterFromPreview}
+            onToggleInternalDb={handleToggleInternalDb}
           />
         </div>
       </div>
@@ -391,6 +625,56 @@ export default function ElevateGPT() {
               onExportShortlist={handleExportShortlist}
             />
           </div>
+        </div>
+      )}
+
+      {/* Manual Filter Adjustment Modal */}
+      {showManualAdjustment && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <ManualFilterAdjustment
+            currentFilters={currentFilters}
+            onSave={handleManualAdjustmentSave}
+            onCancel={() => setShowManualAdjustment(false)}
+          />
+        </div>
+      )}
+
+      {/* Save Filter Dialog */}
+      {showSaveDialog && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <Card className="w-full max-w-md">
+            <CardHeader>
+              <CardTitle>Save Filter</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <Label htmlFor="filterName">Filter Name</Label>
+                <Input
+                  id="filterName"
+                  placeholder="Enter filter name..."
+                  value={filterName}
+                  onChange={(e) => setFilterName(e.target.value)}
+                  onKeyPress={(e) => {
+                    if (e.key === "Enter") {
+                      handleSaveFilterDialog();
+                    }
+                  }}
+                />
+              </div>
+              <div className="flex gap-2">
+                <Button onClick={handleSaveFilterDialog} className="flex-1">
+                  Save
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => setShowSaveDialog(false)}
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       )}
     </div>

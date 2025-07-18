@@ -438,15 +438,23 @@ export function InfluencerGrid({
                       </Badge>
                     </div>
 
-                    <div className="flex space-x-2 pt-2">
+                    {/* Worked with us indicator - only show when internal DB is enabled */}
+                    {influencer.hasWorkedWithUs && (
+                      <div className="flex items-center gap-1 pt-1">
+                        <Badge
+                          variant="secondary"
+                          className="text-xs bg-green-100 text-green-800"
+                        >
+                          ✓ Worked with us before
+                        </Badge>
+                      </div>
+                    )}
+
+                    <div className="pt-2">
                       <Button
                         size="sm"
-                        className="flex-1 bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white"
+                        className="w-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white"
                       >
-                        <Mail className="h-3 w-3 mr-1" />
-                        Contact
-                      </Button>
-                      <Button variant="outline" size="sm" className="flex-1">
                         <Eye className="h-3 w-3 mr-1" />
                         View Profile
                       </Button>
@@ -519,14 +527,10 @@ export function InfluencerGrid({
                     <div className="flex space-x-2">
                       <Button
                         size="sm"
-                        className="bg-pink-500 hover:bg-pink-600"
+                        className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white"
                       >
-                        <Mail className="h-3 w-3 mr-1" />
-                        Contact
-                      </Button>
-                      <Button variant="outline" size="sm">
                         <Eye className="h-3 w-3 mr-1" />
-                        View
+                        View Profile
                       </Button>
                     </div>
                   </div>

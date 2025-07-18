@@ -48,6 +48,7 @@ export function ChatInterface({
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [filterName, setFilterName] = useState("");
   const [showManualAdjustment, setShowManualAdjustment] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
 
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -90,6 +91,7 @@ export function ChatInterface({
 
     setMessages((prev) => [...prev, userMessage]);
     setInput("");
+    setIsTyping(false);
     setIsLoading(true);
 
     try {
@@ -140,6 +142,12 @@ export function ChatInterface({
     }
   };
 
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setInput(value);
+    setIsTyping(value.length > 0);
+  };
+
   const handleSaveFilter = () => {
     if (!currentFilters || !filterName.trim()) return;
 
@@ -180,12 +188,12 @@ export function ChatInterface({
   };
 
   return (
-    <Card className="h-[600px] flex flex-col overflow-hidden">
-      <CardHeader className="pb-3 flex-shrink-0">
-        <CardTitle className="flex items-center gap-2">
-          <MessageCircle className="h-5 w-5" />
+    <Card className="h-[500px] flex flex-col overflow-hidden">
+      <CardHeader className="pb-2 flex-shrink-0">
+        <CardTitle className="flex items-center gap-2 text-base">
+          <MessageCircle className="h-4 w-4" />
           AI Chat
-          <Badge variant="secondary" className="ml-auto">
+          <Badge variant="secondary" className="ml-auto text-xs">
             <Sparkles className="h-3 w-3 mr-1" />
             Influencer Discovery
           </Badge>
@@ -194,9 +202,9 @@ export function ChatInterface({
 
       <CardContent className="flex-1 flex flex-col p-0 min-h-0">
         {/* Messages */}
-        <div className="flex-1 overflow-hidden">
-          <ScrollArea className="h-full p-4" ref={scrollAreaRef}>
-            <div className="space-y-4">
+        <div className="flex-1 overflow-hidden min-h-0">
+          <ScrollArea className="h-full p-3 pb-0" ref={scrollAreaRef}>
+            <div className="space-y-3">
               {messages.map((message) => (
                 <div
                   key={message.id}
@@ -212,20 +220,20 @@ export function ChatInterface({
                     }`}
                   >
                     <div
-                      className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
+                      className={`flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center ${
                         message.type === "user"
                           ? "bg-blue-500 text-white"
                           : "bg-purple-100 text-purple-600"
                       }`}
                     >
                       {message.type === "user" ? (
-                        <User className="h-4 w-4" />
+                        <User className="h-3 w-3" />
                       ) : (
-                        <Bot className="h-4 w-4" />
+                        <Bot className="h-3 w-3" />
                       )}
                     </div>
                     <div
-                      className={`px-4 py-2 rounded-lg whitespace-pre-wrap break-words ${
+                      className={`px-3 py-2 rounded-lg whitespace-pre-wrap break-words text-sm ${
                         message.type === "user"
                           ? "bg-blue-500 text-white"
                           : "bg-gray-100 text-gray-900"
@@ -240,11 +248,11 @@ export function ChatInterface({
               {isLoading && (
                 <div className="flex justify-start">
                   <div className="flex items-start space-x-2 max-w-[80%]">
-                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center">
-                      <Bot className="h-4 w-4" />
+                    <div className="flex-shrink-0 w-7 h-7 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center">
+                      <Bot className="h-3 w-3" />
                     </div>
-                    <div className="px-4 py-2 rounded-lg bg-gray-100 text-gray-900">
-                      <Loader2 className="h-4 w-4 animate-spin" />
+                    <div className="px-3 py-2 rounded-lg bg-gray-100 text-gray-900">
+                      <Loader2 className="h-3 w-3 animate-spin" />
                     </div>
                   </div>
                 </div>
@@ -253,43 +261,9 @@ export function ChatInterface({
           </ScrollArea>
         </div>
 
-        {/* Action Buttons */}
-        {currentFilters && (
-          <div className="px-4 py-2 border-t bg-gray-50 flex-shrink-0">
-            <div className="flex items-center gap-2">
-              <Button
-                onClick={handleRunSearch}
-                size="sm"
-                className="flex items-center gap-1"
-              >
-                <Play className="h-3 w-3" />
-                Run Search
-              </Button>
-              <Button
-                onClick={() => setShowSaveDialog(true)}
-                variant="outline"
-                size="sm"
-                className="flex items-center gap-1"
-              >
-                <Save className="h-3 w-3" />
-                Save Filter
-              </Button>
-              <Button
-                onClick={() => setShowManualAdjustment(true)}
-                variant="outline"
-                size="sm"
-                className="flex items-center gap-1"
-              >
-                <Settings className="h-3 w-3" />
-                Adjust
-              </Button>
-            </div>
-          </div>
-        )}
-
         {/* Save Dialog */}
         {showSaveDialog && (
-          <div className="px-4 py-2 border-t bg-blue-50 flex-shrink-0">
+          <div className="px-3 py-2 border-t bg-blue-50 flex-shrink-0">
             <div className="flex items-center gap-2">
               <Input
                 placeholder="Filter name..."
@@ -317,9 +291,9 @@ export function ChatInterface({
         )}
 
         {/* Suggestions */}
-        {suggestions.length > 0 && (
-          <div className="px-4 py-2 border-t flex-shrink-0">
-            <div className="text-xs text-gray-500 mb-2">Suggestions:</div>
+        {suggestions.length > 0 && isTyping && (
+          <div className="px-3 py-2 border-t bg-gray-50 flex-shrink-0">
+            <div className="text-xs text-gray-500 mb-1">Suggestions:</div>
             <div className="flex flex-wrap gap-1">
               {suggestions.map((suggestion, index) => (
                 <Badge
@@ -335,16 +309,14 @@ export function ChatInterface({
           </div>
         )}
 
-        <Separator className="flex-shrink-0" />
-
         {/* Input */}
-        <div className="p-4 flex-shrink-0">
+        <div className="p-3 border-t bg-white flex-shrink-0">
           <div className="flex items-center space-x-2">
             <Input
               ref={inputRef}
               placeholder="Ask me about influencers you're looking for..."
               value={input}
-              onChange={(e) => setInput(e.target.value)}
+              onChange={handleInputChange}
               onKeyPress={handleKeyPress}
               disabled={isLoading}
               className="flex-1"

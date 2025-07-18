@@ -6,6 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import {
   Wand2,
   Users,
@@ -18,6 +20,9 @@ import {
   Instagram,
   Youtube,
   Twitter,
+  Play,
+  Settings,
+  Save,
 } from "lucide-react";
 import { InfluencerFilters } from "@/lib/types";
 
@@ -25,12 +30,20 @@ interface FilterBuildingPreviewProps {
   currentFilters: InfluencerFilters;
   isBuilding: boolean;
   lastMessage: string;
+  onRunSearch?: () => void;
+  onAdjust?: () => void;
+  onSave?: () => void;
+  onToggleInternalDb?: (enabled: boolean) => void;
 }
 
 export function FilterBuildingPreview({
   currentFilters,
   isBuilding,
   lastMessage,
+  onRunSearch,
+  onAdjust,
+  onSave,
+  onToggleInternalDb,
 }: FilterBuildingPreviewProps) {
   const [buildingProgress, setBuildingProgress] = useState(0);
   const [buildingSteps, setBuildingSteps] = useState<string[]>([]);
@@ -246,17 +259,16 @@ export function FilterBuildingPreview({
 
             <Separator />
 
-            {/* Search Scope */}
+            {/* Internal Database Toggle */}
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
+              <Label className="flex items-center gap-2 text-sm">
                 <Database className="h-4 w-4 text-gray-500" />
-                <span className="text-sm font-medium">Search Scope</span>
-              </div>
-              <Badge
-                variant={currentFilters.useInternalDb ? "default" : "secondary"}
-              >
-                {currentFilters.useInternalDb ? "Internal DB" : "Broad Search"}
-              </Badge>
+                Use Internal Database
+              </Label>
+              <Switch
+                checked={currentFilters.useInternalDb}
+                onCheckedChange={onToggleInternalDb}
+              />
             </div>
 
             {/* Filter Summary */}
@@ -282,6 +294,38 @@ export function FilterBuildingPreview({
                   <span> and {currentFilters.minEngagement}%+ engagement</span>
                 )}
                 {currentFilters.verified && <span> (verified only)</span>}
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="pt-4 space-y-2">
+              <Button
+                onClick={onRunSearch}
+                className="w-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white"
+                size="sm"
+              >
+                <Play className="h-3 w-3 mr-1" />
+                Run Search
+              </Button>
+              <div className="flex gap-2">
+                <Button
+                  onClick={onSave}
+                  variant="outline"
+                  size="sm"
+                  className="flex-1"
+                >
+                  <Save className="h-3 w-3 mr-1" />
+                  Save Filter
+                </Button>
+                <Button
+                  onClick={onAdjust}
+                  variant="outline"
+                  size="sm"
+                  className="flex-1"
+                >
+                  <Settings className="h-3 w-3 mr-1" />
+                  Adjust
+                </Button>
               </div>
             </div>
           </div>

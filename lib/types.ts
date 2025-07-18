@@ -46,6 +46,7 @@ export interface Influencer {
   category: string;
   avatar: string;
   verified: boolean;
+  hasWorkedWithUs?: boolean; // New field to track if influencer has worked with us before
 }
 
 export interface SocialPost {
@@ -71,6 +72,7 @@ export interface SocialTracker {
   keywords: string[];
   hashtags: string[];
   platforms: ("instagram" | "twitter" | "tiktok" | "youtube")[];
+  socialMediaHandles?: string[]; // New field for specific influencer handles to monitor
   startDate: Date;
   endDate: Date;
   status: "active" | "paused" | "completed";
