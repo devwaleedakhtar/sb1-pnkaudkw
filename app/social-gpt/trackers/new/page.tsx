@@ -1,15 +1,10 @@
-'use client';
+"use client";
 
-import { TrackerForm } from '@/components/social-gpt/tracker-form';
-import { PageHeader } from '@/components/layout/page-header';
+import { TrackerForm } from "@/components/social-gpt/tracker-form";
 
 export default function NewTracker() {
   return (
-    <div className="max-w-4xl mx-auto">
-      <PageHeader
-        title="Create Social Tracker"
-        description="Set up social media monitoring for your campaign"
-      />
+    <div className="w-full">
       <TrackerForm campaignId="1" />
     </div>
   );

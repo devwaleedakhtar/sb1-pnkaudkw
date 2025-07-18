@@ -103,6 +103,10 @@ export function TrackerForm({ campaignId, tracker, onSave }: TrackerFormProps) {
   const [showManualAdjustment, setShowManualAdjustment] = useState(false);
   const [aiInterpretation, setAiInterpretation] = useState<string>("");
 
+  // Backfill state
+  const [enableBackfill, setEnableBackfill] = useState(false);
+  const [backfillDate, setBackfillDate] = useState("");
+
   const [formData, setFormData] = useState({
     name: tracker?.name || "",
     keywords: tracker?.keywords || [],
@@ -348,6 +352,11 @@ export function TrackerForm({ campaignId, tracker, onSave }: TrackerFormProps) {
       }
     }
 
+    if (enableBackfill && !backfillDate) {
+      newErrors.backfillDate =
+        "Backfill date is required when backfill is enabled";
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -368,6 +377,7 @@ export function TrackerForm({ campaignId, tracker, onSave }: TrackerFormProps) {
         startDate: new Date(formData.startDate),
         endDate: new Date(formData.endDate),
         status: "active" as const,
+        backfill: enableBackfill ? new Date(backfillDate) : undefined,
       };
 
       let savedTracker: SocialTracker;
@@ -662,7 +672,7 @@ export function TrackerForm({ campaignId, tracker, onSave }: TrackerFormProps) {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setShowAdvanced(true)}
+                onClick={() => setShowManualAdjustment(!showManualAdjustment)}
               >
                 <Settings className="h-4 w-4 mr-1" />
                 Adjust Settings
@@ -675,7 +685,7 @@ export function TrackerForm({ campaignId, tracker, onSave }: TrackerFormProps) {
   };
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6">
+    <div className="w-full space-y-6">
       {/* Main Card */}
       <Card>
         <CardHeader>
@@ -706,18 +716,6 @@ export function TrackerForm({ campaignId, tracker, onSave }: TrackerFormProps) {
                 <Sparkles className="h-3 w-3 mr-1" />
                 AI-Powered
               </Badge>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowAdvanced(!showAdvanced)}
-              >
-                {showAdvanced ? (
-                  <ChevronUp className="h-4 w-4" />
-                ) : (
-                  <ChevronDown className="h-4 w-4" />
-                )}
-                Advanced
-              </Button>
             </div>
           </CardTitle>
           <CardDescription>
@@ -855,14 +853,14 @@ export function TrackerForm({ campaignId, tracker, onSave }: TrackerFormProps) {
                       <Label className="text-sm font-medium text-gray-700">
                         Try these examples:
                       </Label>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                      <div className="flex flex-wrap gap-2">
                         {exampleQueries.slice(0, 4).map((example, index) => (
                           <Button
                             key={index}
                             variant="outline"
                             size="sm"
                             onClick={() => handleExampleClick(example)}
-                            className="text-xs bg-gray-50 hover:bg-pink-50 hover:border-pink-300 justify-start h-auto p-3 text-left"
+                            className="text-xs bg-gray-50 hover:bg-pink-50 hover:border-pink-300 justify-start h-auto p-3 text-left whitespace-normal"
                           >
                             {example}
                           </Button>
@@ -1112,6 +1110,42 @@ export function TrackerForm({ campaignId, tracker, onSave }: TrackerFormProps) {
                       <p className="text-sm text-red-500">{errors.endDate}</p>
                     )}
                   </div>
+                </div>
+
+                {/* Backfill Toggle and Date */}
+                <div className="space-y-4">
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      id="backfill"
+                      checked={enableBackfill}
+                      onCheckedChange={setEnableBackfill}
+                    />
+                    <Label htmlFor="backfill" className="text-sm font-medium">
+                      Enable Backfill
+                    </Label>
+                  </div>
+                  <p className="text-sm text-gray-600">
+                    Backfill will collect historical data from before the start
+                    date
+                  </p>
+
+                  {enableBackfill && (
+                    <div className="space-y-2">
+                      <Label htmlFor="backfillDate">Backfill Date *</Label>
+                      <Input
+                        id="backfillDate"
+                        type="date"
+                        value={backfillDate}
+                        onChange={(e) => setBackfillDate(e.target.value)}
+                        className={errors.backfillDate ? "border-red-500" : ""}
+                      />
+                      {errors.backfillDate && (
+                        <p className="text-sm text-red-500">
+                          {errors.backfillDate}
+                        </p>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 {/* Duration Info */}

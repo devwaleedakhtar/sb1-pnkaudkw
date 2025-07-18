@@ -31,7 +31,7 @@ export function Sidebar({ selectedCampaign, onCampaignChange }: SidebarProps) {
     { name: "Dashboard", href: "/dashboard", icon: BarChart3 },
     { name: "PublicityGPT", href: "/publicity-gpt", icon: Zap },
     { name: "ElevateGPT", href: "/elevate-gpt", icon: Users },
-    { name: "SocialGPT", href: "/social-gpt", icon: MessageSquare },
+    { name: "Social", href: "/social-gpt", icon: MessageSquare },
   ];
 
   return (

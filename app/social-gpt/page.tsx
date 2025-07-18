@@ -138,7 +138,7 @@ export default function SocialGPT() {
   return (
     <div className="max-w-7xl mx-auto">
       <PageHeader
-        title="SocialGPT"
+        title="Social"
         description="AI-powered social media monitoring and analytics platform"
       >
         <div className="flex items-center space-x-3">
