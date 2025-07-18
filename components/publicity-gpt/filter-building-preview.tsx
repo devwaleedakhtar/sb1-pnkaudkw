@@ -367,7 +367,7 @@ export function FilterBuildingPreview({
               <Button
                 size="sm"
                 onClick={handleRunSearch}
-                className="w-full"
+                className="w-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white"
                 disabled={searching}
               >
                 <Play className="h-4 w-4 mr-2" />

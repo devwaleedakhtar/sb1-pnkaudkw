@@ -47,6 +47,7 @@ export function ChatInterface({
   const [isLoading, setIsLoading] = useState(false);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [showManualAdjustment, setShowManualAdjustment] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
 
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -90,6 +91,8 @@ export function ChatInterface({
     setMessages((prev) => [...prev, userMessage]);
     setInput("");
     setIsLoading(true);
+    setIsTyping(false);
+    setSuggestions([]);
 
     try {
       const response: ChatResponse = await aiChat.processMessage(content);
@@ -128,6 +131,12 @@ export function ChatInterface({
       e.preventDefault();
       handleSendMessage();
     }
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setInput(value);
+    setIsTyping(value.length > 0);
   };
 
   const handleSuggestionClick = (suggestion: string) => {
@@ -169,8 +178,8 @@ export function ChatInterface({
   }
 
   return (
-    <Card className="flex flex-col h-[600px]">
-      <CardHeader className="flex-shrink-0 pb-4">
+    <Card className="flex flex-col h-[500px]">
+      <CardHeader className="flex-shrink-0 pb-3">
         <CardTitle className="flex items-center gap-2">
           <MessageCircle className="h-5 w-5" />
           AI Chat Assistant
@@ -183,8 +192,8 @@ export function ChatInterface({
 
       <CardContent className="flex-1 flex flex-col p-0 min-h-0">
         {/* Chat Messages */}
-        <ScrollArea className="flex-1 px-6" ref={scrollAreaRef}>
-          <div className="space-y-4 pb-4">
+        <ScrollArea className="flex-1 px-4" ref={scrollAreaRef}>
+          <div className="space-y-3 pb-3">
             {messages.map((message) => (
               <div
                 key={message.id}
@@ -247,10 +256,10 @@ export function ChatInterface({
         </ScrollArea>
 
         {/* Suggestions */}
-        {suggestions.length > 0 && (
-          <div className="flex-shrink-0 px-6 py-3 border-t">
-            <div className="text-sm text-gray-600 mb-2">Suggestions:</div>
-            <div className="flex flex-wrap gap-2">
+        {suggestions.length > 0 && isTyping && (
+          <div className="flex-shrink-0 px-4 py-2 border-t">
+            <div className="text-sm text-gray-600 mb-1">Suggestions:</div>
+            <div className="flex flex-wrap gap-1">
               {suggestions.map((suggestion, index) => (
                 <Button
                   key={index}
@@ -280,12 +289,12 @@ export function ChatInterface({
         )}
 
         {/* Input Area - Inside the chat container */}
-        <div className="flex-shrink-0 px-6 py-4 border-t">
+        <div className="flex-shrink-0 px-4 py-3 border-t">
           <div className="flex gap-2">
             <Input
               ref={inputRef}
               value={input}
-              onChange={(e) => setInput(e.target.value)}
+              onChange={handleInputChange}
               onKeyPress={handleKeyPress}
               placeholder="Ask me about media coverage..."
               className="flex-1"

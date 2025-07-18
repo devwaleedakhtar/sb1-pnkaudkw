@@ -29,7 +29,7 @@ export function Sidebar({ selectedCampaign, onCampaignChange }: SidebarProps) {
 
   const navigation = [
     { name: "Dashboard", href: "/dashboard", icon: BarChart3 },
-    { name: "PublicityGPT", href: "/publicity-gpt", icon: Zap },
+    { name: "Publicity", href: "/publicity-gpt", icon: Zap },
     { name: "Elevate", href: "/elevate-gpt", icon: Users },
     { name: "Social", href: "/social-gpt", icon: MessageSquare },
   ];

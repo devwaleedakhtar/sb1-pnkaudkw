@@ -185,7 +185,7 @@ export default function PublicityGPT() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="PublicityGPT"
+        title="Publicity"
         description="AI-powered media monitoring and analysis"
       />
 
