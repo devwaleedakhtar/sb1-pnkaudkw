@@ -12,6 +12,7 @@ import {
 import { Campaign } from "@/lib/types";
 import { Sidebar } from "@/components/layout/sidebar";
 import { api } from "@/lib/mock-api";
+import { ErrorBoundary } from "@/components/error-boundary";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -64,19 +65,21 @@ export default function RootLayout({
   return (
     <html lang="en" className="h-full">
       <body className={`${poppins.className} h-full`}>
-        <CampaignContext.Provider
-          value={{ selectedCampaign, setSelectedCampaign }}
-        >
-          <div className="flex h-full bg-gray-50">
-            <Sidebar
-              selectedCampaign={selectedCampaign}
-              onCampaignChange={setSelectedCampaign}
-            />
-            <main className="flex-1 overflow-auto">
-              <div className="min-h-full p-8">{children}</div>
-            </main>
-          </div>
-        </CampaignContext.Provider>
+        <ErrorBoundary>
+          <CampaignContext.Provider
+            value={{ selectedCampaign, setSelectedCampaign }}
+          >
+            <div className="flex h-full bg-gray-50">
+              <Sidebar
+                selectedCampaign={selectedCampaign}
+                onCampaignChange={setSelectedCampaign}
+              />
+              <main className="flex-1 overflow-auto">
+                <div className="min-h-full p-8">{children}</div>
+              </main>
+            </div>
+          </CampaignContext.Provider>
+        </ErrorBoundary>
       </body>
     </html>
   );

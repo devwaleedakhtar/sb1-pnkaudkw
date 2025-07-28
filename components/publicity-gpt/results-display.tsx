@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { MediaResult } from "@/lib/types";
 import { ResultsTable } from "./results-table";
 import { ResultsGrid } from "./results-grid";
@@ -31,9 +31,9 @@ export function ResultsDisplay({
     null
   );
 
-  const handlePaginationChange = (pagination: PaginationData) => {
+  const handlePaginationChange = useCallback((pagination: PaginationData) => {
     setPaginationData(pagination);
-  };
+  }, []);
 
   // Reset pagination when viewMode changes
   useEffect(() => {
