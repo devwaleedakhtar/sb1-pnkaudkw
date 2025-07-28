@@ -106,27 +106,17 @@ export function CampaignSwitcherModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden">
-        <DialogHeader>
-          <DialogTitle className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <Building className="h-6 w-6 text-pink-500" />
-              <span>Select Campaign</span>
-            </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleClose}
-              className="h-8 w-8 p-0"
-            >
-              <X className="h-4 w-4" />
-            </Button>
+      <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col">
+        <DialogHeader className="flex-shrink-0">
+          <DialogTitle className="flex items-center space-x-2">
+            <Building className="h-6 w-6 text-pink-500" />
+            <span>Select Campaign</span>
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4">
+        <div className="flex-1 flex flex-col space-y-4 min-h-0">
           {/* Search Bar */}
-          <div className="relative">
+          <div className="relative flex-shrink-0">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input
               placeholder="Search campaigns..."
@@ -136,8 +126,8 @@ export function CampaignSwitcherModal({
             />
           </div>
 
-          {/* Campaigns Grid */}
-          <div className="overflow-y-auto max-h-[60vh]">
+          {/* Campaigns Grid - Scrollable */}
+          <div className="flex-1 overflow-y-auto min-h-0">
             {loading ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {[...Array(6)].map((_, i) => (
@@ -172,7 +162,7 @@ export function CampaignSwitcherModal({
                 </Button>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pb-4">
                 {filteredCampaigns.map((campaign) => (
                   <Card
                     key={campaign.id}
@@ -232,7 +222,7 @@ export function CampaignSwitcherModal({
           </div>
 
           {/* New Campaign Button */}
-          <div className="border-t border-gray-200 pt-4">
+          <div className="border-t border-gray-200 pt-4 flex-shrink-0">
             <Button
               asChild
               className="w-full bg-pink-500 hover:bg-pink-600 text-white"
